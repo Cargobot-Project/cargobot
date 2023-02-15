@@ -9,7 +9,7 @@ directives:
 
 - add_model:
     name: box-vertical
-    file: file:///work/models/box-vertical.urdf
+    file: file:///models/box-vertical.urdf
     
 - add_weld:
     parent: box-vertical_origin

@@ -4,3 +4,6 @@
 
 # Virtual environment
 venv/
+
+# PyCharm
+.idea

@@ -1,4 +1,5 @@
 import numpy as np
+import time
 from pydrake.all import (AbstractValue, AngleAxis, Concatenate, DiagramBuilder,
                          LeafSystem, MeshcatVisualizer, MeshcatPointCloudVisualizer, PiecewisePolynomial,
                          PiecewisePose, PointCloud, RigidTransform, RotationMatrix,
@@ -29,7 +30,7 @@ def BoxSystem():
     plant, scene_graph = AddMultibodyPlantSceneGraph(builder, time_step=0.0)
     parser = Parser(plant)
     AddPackagePaths(parser)
-    parser.AddAllModelsFromFile("models/box_with_cameras.dmd.yaml")
+    parser.AddModels("models/box_with_cameras.dmd.yaml")
     plant.Finalize()
 
     # Add a visualizer just to help us see the object.
@@ -195,10 +196,10 @@ directives:
 - add_directives:
     file: package://manipulation/iiwa_and_wsg.dmd.yaml
 - add_directives:
-    file: file:///work/models/warehouse_w_cameras.dmd.yaml
+    file: file:///usr/cargobot/cargobot-project/perception/models/warehouse_w_cameras.dmd.yaml
 - add_model:
     name: box-vertical
-    file: file:///work/models/box-vertical.urdf
+    file: file:///usr/cargobot/cargobot-project/perception/models/box-vertical.urdf
     default_free_body_pose:
         base_link_box-vertical:
             translation: [{.55 + 0.05 * (x[0] - 0.5)}, {0.1 + 0.05 * (x[1] - 0.5)}, 0.02515]
@@ -265,11 +266,11 @@ def icp_pick_and_place_demo():
                             radius=0.004)
 
     print(plan.end_time(plan.GetMyContextFromRoot(context)))
-    if running_as_notebook:
-        visualizer.StartRecording(False)
-        simulator.AdvanceTo(plan.end_time(plan.GetMyContextFromRoot(context)))
-        visualizer.PublishRecording()
-    else:
-        simulator.AdvanceTo(0.1)
+    visualizer.StartRecording(False)
+    simulator.AdvanceTo(plan.end_time(plan.GetMyContextFromRoot(context)))
+    visualizer.PublishRecording()
 
 icp_pick_and_place_demo()
+
+while True:
+    time.sleep(1)

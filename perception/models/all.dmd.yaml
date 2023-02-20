@@ -1,3 +1,0 @@
-directives:     
-    - add_directives:
-        file: file:///work/models/cargobot_models.dmd.yaml

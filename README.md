@@ -14,6 +14,8 @@ Sonra shell script'i çalıştırmanız lazım.
 sh cargobot_build.sh
 ```
 
+> Eğer Windows kullanıyorsanız shell script'i direkt powershell'de çalıştırmayı deneyin. "curdir" variable'ı yerine cargobot directory'sinin path'ini yapıştırın.
+
 Şu an docker containerın içine girmiş olmanız lazım. Virtual environment (venv) önceden aktive edilmiş şekilde giremiyorsunuz. O yüzden aşağıdaki kod ile venv'i aktive edeceğiz.
 
 ```

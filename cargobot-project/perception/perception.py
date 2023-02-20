@@ -1,4 +1,5 @@
 import numpy as np
+import time
 from pydrake.all import (AbstractValue, AngleAxis, Concatenate, DiagramBuilder,
                          LeafSystem, MeshcatVisualizer, MeshcatPointCloudVisualizer, PiecewisePolynomial,
                          PiecewisePose, PointCloud, RigidTransform, RotationMatrix,
@@ -265,11 +266,11 @@ def icp_pick_and_place_demo():
                             radius=0.004)
 
     print(plan.end_time(plan.GetMyContextFromRoot(context)))
-    if running_as_notebook:
-        visualizer.StartRecording(False)
-        simulator.AdvanceTo(plan.end_time(plan.GetMyContextFromRoot(context)))
-        visualizer.PublishRecording()
-    else:
-        simulator.AdvanceTo(0.1)
+    visualizer.StartRecording(False)
+    simulator.AdvanceTo(plan.end_time(plan.GetMyContextFromRoot(context)))
+    visualizer.PublishRecording()
 
 icp_pick_and_place_demo()
+
+while True:
+    time.sleep(1)

@@ -6,6 +6,7 @@ docker rm cargobot_container
 
 docker run --name cargobot_container \
 	--privileged \
+	-p 7000:7000 \
 	-v $curdir:/usr/cargobot \
 	-it cargobot_image:latest bash
 

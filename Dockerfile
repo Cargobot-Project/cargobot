@@ -12,7 +12,11 @@ ENV PATH /venv/bin:$PATH
 RUN which python
 
 RUN /venv/bin/pip install manipulation \
-	&& /venv/bin/pip install scipy
+	&& /venv/bin/pip install scipy \
+	&& /venv/bin/pip install pyvirtualdisplay \
+	&& /venv/bin/pip install xvfbwrapper
+
+RUN apt-get -y install xvfb
 
 ENTRYPOINT /bin/bash
 

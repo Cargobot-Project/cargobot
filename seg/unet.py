@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 
 
-# model.py: An implementation of U-Net model.
+# unet.py: An implementation of U-Net model.
 # __author__ = "Gökberk Beydemir"
 
 
@@ -47,6 +47,7 @@ class UNet(nn.Module):
             )
             self.ups.append(DoubleConv(feature * 2, feature))
 
+        # Bottleneck and final convolution layer
         self.bottleneck = DoubleConv(features[-1], features[-1] * 2)
         self.final_conv = nn.Conv2d(features[0], out_channels, kernel_size=1)
 
@@ -69,14 +70,21 @@ class UNet(nn.Module):
             x = self.ups[i + 1](concat_skip)
 
         x = self.final_conv(x)
+        x = torch.sigmoid(x)  # Don't apply the sigmoid function in evaluation
 
         return x
 
 
 def test():
+
+    # Define a random torch of 512 x 512
     image = torch.randn((1, 1, 512, 512))
+    # Initialize model with 1 in channel and 1 out channel
     model = UNet(in_channels=1, out_channels=1)
+    # Get the model output
     prediction = model(image)
+
+    # Check if the output size matches with the image size
     assert prediction.shape == image.shape
     print(prediction.shape)
     print(prediction)

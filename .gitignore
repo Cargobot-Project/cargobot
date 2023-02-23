@@ -127,3 +127,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Segmentation Dataset (it's easy to generate so no need to store it in git)
+cargobot-project/perception/dataset

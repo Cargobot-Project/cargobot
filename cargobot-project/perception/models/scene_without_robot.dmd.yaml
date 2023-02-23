@@ -8,7 +8,7 @@ directives:
 
     - add_model:
         name: table_top
-        file: file:///work/table_top.sdf
+        file: file:///usr/cargobot/cargobot-project/perception/models/table_top.sdf
 
     - add_weld: 
         parent: table_top_center
@@ -16,7 +16,7 @@ directives:
     
     - add_model:
         name: cargo-space
-        file: file:///work/cargo_space.sdf
+        file: file:///usr/cargobot/cargobot-project/perception/models/cargo-space.sdf
 
     - add_weld:
         parent: world

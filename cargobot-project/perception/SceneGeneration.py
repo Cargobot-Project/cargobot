@@ -37,11 +37,14 @@ from pydrake.all import (AddMultibodyPlantSceneGraph, Box,
 from manipulation import running_as_notebook
 from manipulation.scenarios import (AddRgbdSensor, AddShape, ycb)
 
+from BoxObjectString import BoxObjectString
 
 
 
 
 def generate_scene(number_of_times):
+    meshcat = StartMeshcat()
+
     rs = np.random.RandomState()  # this is for python
     generator = RandomGenerator(rs.randint(1000))  # this is for c++
     for epoch in range(number_of_times):
@@ -51,7 +54,7 @@ def generate_scene(number_of_times):
 
         parser = Parser(plant)
 
-        parser.AddModels("/work/scene_without_robot.dmd.yaml")
+        parser.AddModels("/usr/cargobot/cargobot-project/perception/models/scene_without_robot.dmd.yaml")
         
         box_count = color = rs.randint(16)
         for i in range(box_count if running_as_notebook else 2):
@@ -104,19 +107,19 @@ def generate_scene(number_of_times):
         plt.figure()
         plt.imshow(color_image1.data)
         plt.axis('off')
-        plt.savefig(f"/datasets/segmentatiton-database/Segmentation Data/scene{epoch}_cam1.png")
+        plt.savefig(f"dataset/scene{epoch}_cam1.png")
 
         color_image2 = diagram.GetOutputPort("color_image2").Eval(context)
         plt.figure()
         plt.imshow(color_image2.data)
         plt.axis('off')
-        plt.savefig(f"/datasets/segmentatiton-database/Segmentation Data/scene{epoch}_cam2.png"  )
+        plt.savefig(f"dataset/scene{epoch}_cam2.png"  )
 
         color_image3 = diagram.GetOutputPort("color_image3").Eval(context)
         plt.figure()
         plt.imshow(color_image3.data)
         plt.axis('off')
-        plt.savefig(f"/datasets/segmentatiton-database/Segmentation Data/scene{epoch}_cam3.png"  )
+        plt.savefig(f"dataset/scene{epoch}_cam3.png"  )
 
         visualizer.PublishRecording()
 

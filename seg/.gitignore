@@ -1,9 +1,0 @@
-# Mac
-../.DS_Store
-.DS_Store
-
-# Virtual environment
-venv/
-
-# PyCharm
-.idea

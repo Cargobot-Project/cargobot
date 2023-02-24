@@ -9,7 +9,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 # Local modules
-from unet import UNet
+from model import UNet
 from utils import *
 
 # Hyperparameters etc.

@@ -13,7 +13,7 @@ from unet import UNet
 from utils import *
 
 # Hyperparameters etc.
-LEARNING_RATE = 0.1
+LEARNING_RATE = 1e-4
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 BATCH_SIZE = 1
 NUM_EPOCHS = 1000
@@ -112,14 +112,14 @@ def main():
 
     model = UNet(in_channels=1, out_channels=1).to(DEVICE)
     loss_fn = nn.BCEWithLogitsLoss()
-    optimizer = optim.Adadelta(model.parameters(), lr=LEARNING_RATE)
+    optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
     # scaler = torch.cuda.amp.GradScaler()
 
     # Early stopping
     min_val_loss = np.Inf
     min_epoch = 0
     min_delta = 0
-    patience = 50
+    patience = 100
     val_losses = []
 
     # Create output directory
@@ -180,6 +180,6 @@ def main():
 
 if __name__ == "__main__":
 
-    repetition_counter = 4
+    repetition_counter = 4  # To train 4 different models (can be changed)
     for repetition in range(repetition_counter):
         main()

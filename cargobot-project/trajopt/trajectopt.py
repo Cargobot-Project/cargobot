@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import time
 
 from pydrake.common import FindResourceOrThrow, temp_directory
 from pydrake.geometry import (
@@ -169,7 +170,7 @@ def MakeTrajectoryOptimized(plant, plant_context, X_G, X_O, wsg):
     trajs.append(trajopt.ReconstructTrajectory(result))
     return trajs, times
 
-    def PublishPositionTrajectory(trajectory,
+def PublishPositionTrajectory(trajectory,
                               root_context,
                               plant,
                               visualizer,
@@ -195,7 +196,7 @@ def MakeTrajectoryOptimized(plant, plant_context, X_G, X_O, wsg):
     visualizer.StopRecording()
     visualizer.PublishRecording()
 
-    def cargobot_inverse_kinematics(sim_time_step=0.001):
+def cargobot_inverse_kinematics(sim_time_step=0.001):
     # Clean up the Meshcat instance.
     meshcat.Delete()
     meshcat.DeleteAddedControls()
@@ -210,7 +211,7 @@ def MakeTrajectoryOptimized(plant, plant_context, X_G, X_O, wsg):
     #all_parser = Parser(all_plant)
 
     AddPackagePaths(parser)
-    base_models = parser.AddAllModelsFromFile("/work/cargobot-models/all.dmd.yaml")
+    base_models = parser.AddAllModelsFromFile("cargobot-models/all.dmd.yaml")
     iiwa = AddIiwa(plant,collision_model="with_box_collision")
     wsg = AddWsg(plant, iiwa, roll=0.0, welded=True, sphere=False)
     
@@ -254,3 +255,6 @@ def MakeTrajectoryOptimized(plant, plant_context, X_G, X_O, wsg):
         collision_visualizer.GetMyContextFromRoot(context))
     
 cargobot_inverse_kinematics()
+
+while True:
+    time.sleep(1)

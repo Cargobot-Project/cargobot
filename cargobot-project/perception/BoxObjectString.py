@@ -58,7 +58,6 @@ class BoxObjectString():
 
     def return_color_and_texture(self):
         color_text = ""
-        print(self.color)
         if self.color == 0:
             color_text = "<ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse><emissive>1 0 0 1</emissive>"
         elif self.color == 1:

@@ -36,7 +36,7 @@ from pydrake.all import (AddMultibodyPlantSceneGraph, Box,
 
 from manipulation import running_as_notebook
 from manipulation.scenarios import (AddRgbdSensor, AddShape, ycb)
-
+import json
 from BoxObjectString import BoxObjectString
 
 
@@ -47,39 +47,61 @@ def generate_scene(number_of_times):
 
     rs = np.random.RandomState()  # this is for python
     generator = RandomGenerator(rs.randint(1000))  # this is for c++
+
+    path = "dataset/"
+
     for epoch in range(number_of_times):
+        if epoch % 100 == 0:
+            print(epoch)
+
+        filename_base = os.path.join(path,  f"{epoch+1000:05d}")
+
         builder = DiagramBuilder()
 
         plant, scene_graph = AddMultibodyPlantSceneGraph(builder, time_step=0.0005)
-
+        inspector = scene_graph.model_inspector()
         parser = Parser(plant)
 
         parser.AddModels("/usr/cargobot/cargobot-project/perception/models/scene_without_robot.dmd.yaml")
         
-        box_count = color = rs.randint(16)
-        for i in range(box_count if running_as_notebook else 2):
+        box_count= 5 + rs.randint(7)
+        instance_id_to_class_name = dict()
+        for i in range(box_count):
             color = rs.randint(5)
             box = BoxObjectString(color, .1, .1, .2, 1, "")
             sdf = box.generate_sdf_string(f"box{i}")
-            parser.AddModelsFromString(sdf, "sdf")
+            instance = parser.AddModelsFromString(sdf, "sdf")
+            
+            frame_id = plant.GetBodyFrameIdOrThrow(
+                plant.GetBodyIndices(instance[0])[0])
+            
+            geometry_ids = inspector.GetGeometries(frame_id, Role.kPerception)
+           
+            for geom_id in geometry_ids:
+                instance_id_to_class_name[int(
+                    inspector.GetPerceptionProperties(geom_id).GetProperty(
+                        "label", "id"))] = color
 
         plant.Finalize()
         visualizer = MeshcatVisualizer.AddToBuilder(
             builder, scene_graph, meshcat,
             MeshcatVisualizerParams(role=Role.kIllustration))
         
+        with open( f"{filename_base}.json", "w") as f:
+            json.dump(instance_id_to_class_name, f)
 
         camera1 = AddRgbdSensor(builder, scene_graph, RigidTransform(
             RollPitchYaw(np.pi, np.pi/4,  np.pi / 2.0), [0, 1.5, 1.5]))
         builder.ExportOutput(camera1.color_image_output_port(), "color_image1")
+        builder.ExportOutput(camera1.label_image_output_port(), "label_image1")
 
-        camera2 = AddRgbdSensor(builder, scene_graph, RigidTransform(
+        """camera2 = AddRgbdSensor(builder, scene_graph, RigidTransform(
             RollPitchYaw(np.pi, -np.pi/4,  np.pi / 2.0), [0, -1.5, 1.5]))
         builder.ExportOutput(camera2.color_image_output_port(), "color_image2")
 
         camera3 = AddRgbdSensor(builder, scene_graph, RigidTransform(
             RollPitchYaw(np.pi, 0,  np.pi / 2.0), [0, 0, 1.5]))
-        builder.ExportOutput(camera3.color_image_output_port(), "color_image3")
+        builder.ExportOutput(camera3.color_image_output_port(), "color_image3")"""
 
         #vis = DrakeVisualizer.AddToBuilder(builder, scene_graph)
 
@@ -101,15 +123,19 @@ def generate_scene(number_of_times):
         
         meshcat.Flush()  # Wait for the large object meshes to get to meshcat.
     
-        simulator.AdvanceTo(2.0 if running_as_notebook else 0.1)
+        simulator.AdvanceTo(5.0)
 
         color_image1 = diagram.GetOutputPort("color_image1").Eval(context)
         plt.figure()
-        plt.imshow(color_image1.data)
         plt.axis('off')
-        plt.savefig(f"dataset/scene{epoch}_cam1.png")
+        plt.imshow(color_image1.data)
+        plt.savefig(f"{filename_base}.png")
+        plt.close()
 
-        color_image2 = diagram.GetOutputPort("color_image2").Eval(context)
+        label_image1 = diagram.GetOutputPort("label_image1").Eval(context)
+        np.save(f"{filename_base}_mask", label_image1.data)
+
+        """color_image2 = diagram.GetOutputPort("color_image2").Eval(context)
         plt.figure()
         plt.imshow(color_image2.data)
         plt.axis('off')
@@ -119,8 +145,8 @@ def generate_scene(number_of_times):
         plt.figure()
         plt.imshow(color_image3.data)
         plt.axis('off')
-        plt.savefig(f"dataset/scene{epoch}_cam3.png"  )
+        plt.savefig(f"dataset/scene{epoch}_cam3.png"  )"""
 
         visualizer.PublishRecording()
 
-generate_scene(2)
+generate_scene(1000)

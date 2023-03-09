@@ -20,7 +20,7 @@ directives:
  
     - add_model:
         name: cargo-space
-        file: file:///work/cargobot-models/cargo-space.sdf
+        file: file:///usr/cargobot/cargobot-project/perception/models/cargo-space.sdf
 
     - add_weld:
         parent: world
@@ -31,4 +31,4 @@ directives:
 
     - add_model:
         name: box-horizontal
-        file: file:///work/cargobot-models/box-horizontal.urdf  
+        file: file:///usr/cargobot/cargobot-project/perception/models/box-horizontal.urdf  

@@ -1,3 +1,3 @@
 directives:     
     - add_directives:
-        file: file:///models/cargobot_models.dmd.yaml
+        file: "file:///cargobot_models.dmd.yaml"

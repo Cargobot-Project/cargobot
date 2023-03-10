@@ -54,7 +54,7 @@ def generate_scene(number_of_times):
         if epoch % 100 == 0:
             print(epoch)
 
-        filename_base = os.path.join(path,  f"{epoch+1000:05d}")
+        filename_base = os.path.join(path,  f"{epoch+2000:05d}")
 
         builder = DiagramBuilder()
 
@@ -149,4 +149,4 @@ def generate_scene(number_of_times):
 
         visualizer.PublishRecording()
 
-generate_scene(1000)
+generate_scene(5000)

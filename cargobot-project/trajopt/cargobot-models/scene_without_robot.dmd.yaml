@@ -1,0 +1,26 @@
+directives:          
+    - add_frame: 
+        name: table_top_center
+        X_PF:
+            base_frame: world
+            rotation: !Rpy { deg: [0, 0, 0]}
+            translation: [0, 0, -0.05]
+
+    - add_model:
+        name: table_top
+        file: file:///usr/cargobot/cargobot-project/trajopt/cargobot-models/table_top_with_box.sdf
+
+    - add_weld: 
+        parent: table_top_center
+        child: table_top_link
+    
+    - add_model:
+        name: cargo-space
+        file: file:///usr/cargobot/cargobot-project/trajopt/cargobot-models/cargo-space.sdf
+
+    - add_weld:
+        parent: world
+        child: cargo-space::cargo-space
+        X_PC:
+            rotation: !Rpy { deg: [0, 90, 0 ]}
+            translation: [-1.5, 0, 0.4]

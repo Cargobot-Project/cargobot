@@ -41,6 +41,8 @@ from manipulation.scenarios import (AddRgbdSensor, AddShape, ycb)
 import json
 from IPython.display import HTML, SVG, display
 import pydot
+import cairosvg
+
 
 meshcat = StartMeshcat()
 
@@ -112,7 +114,6 @@ planar_controller.GetInputPort('desired_state').FixValue(
 simulator = Simulator(diagram, context)
 """simulator.get_mutable_integrator().set_fixed_step_mode(True)"""
 visualizer.StartRecording()
-"""SVG(pydot.graph_from_dot_data(diagram.GetGraphvizString())[0]).create_svg()"""
 
 print(context)
 simulator.AdvanceTo(12.0)

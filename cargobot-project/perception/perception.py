@@ -19,6 +19,9 @@ from pydrake.multibody.parsing import Parser
 
 from manipulation.utils import FindResource, AddPackagePaths
 from manipulation.scenarios import AddRgbdSensors
+from IPython.display import HTML, SVG, display
+import pydot
+
 
 # Start the visualizer.
 meshcat = StartMeshcat()
@@ -269,6 +272,9 @@ def icp_pick_and_place_demo():
     visualizer.StartRecording(False)
     simulator.AdvanceTo(plan.end_time(plan.GetMyContextFromRoot(context)))
     visualizer.PublishRecording()
+    
+    """graph = pydot.graph_from_dot_data(diagram.GetGraphvizString())[0]
+    graph.write_jpg("trajopt_output.jpg")"""
 
 icp_pick_and_place_demo()
 

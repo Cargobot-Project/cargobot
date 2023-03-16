@@ -23,6 +23,8 @@ from pydrake.all import ( AddMultibodyPlantSceneGraph, AngleAxis, BsplineTraject
                          Parser, PiecewisePolynomial, PiecewisePose, PositionConstraint, 
                          Quaternion, Rgba, RigidTransform, RotationMatrix,
                          SceneGraph, Simulator, Solve,  StartMeshcat, TrajectorySource)
+from IPython.display import HTML, SVG, display
+import pydot
 
 meshcat = StartMeshcat()
 
@@ -169,11 +171,11 @@ def MakeTrajectoryOptimized(plant, plant_context, X_G, X_O, wsg):
     trajs.append(trajopt.ReconstructTrajectory(result))
     return trajs, times
 
-    def PublishPositionTrajectory(trajectory,
-                              root_context,
-                              plant,
-                              visualizer,
-                              time_step=1.0 / 33.0):
+def PublishPositionTrajectory(trajectory,
+                            root_context,
+                            plant,
+                            visualizer,
+                            time_step=1.0 / 33.0):
     """
     Args:
         trajectory: A Trajectory instance list.
@@ -195,7 +197,7 @@ def MakeTrajectoryOptimized(plant, plant_context, X_G, X_O, wsg):
     visualizer.StopRecording()
     visualizer.PublishRecording()
 
-    def cargobot_inverse_kinematics(sim_time_step=0.001):
+def cargobot_inverse_kinematics(sim_time_step=0.001):
     # Clean up the Meshcat instance.
     meshcat.Delete()
     meshcat.DeleteAddedControls()
@@ -210,7 +212,7 @@ def MakeTrajectoryOptimized(plant, plant_context, X_G, X_O, wsg):
     #all_parser = Parser(all_plant)
 
     AddPackagePaths(parser)
-    base_models = parser.AddAllModelsFromFile("/work/cargobot-models/all.dmd.yaml")
+    base_models = parser.AddAllModelsFromFile("/usr/cargobot/cargobot-project/trajopt/cargobot-models/all.dmd.yaml")
     iiwa = AddIiwa(plant,collision_model="with_box_collision")
     wsg = AddWsg(plant, iiwa, roll=0.0, welded=True, sphere=False)
     
@@ -225,7 +227,7 @@ def MakeTrajectoryOptimized(plant, plant_context, X_G, X_O, wsg):
     box = plant.GetBodyByName("box-horizontal")
     plant.SetDefaultFreeBodyPose(box, X_O["initial"])
     
-    
+
     X_WStart = RigidTransform(RotationMatrix.MakeZRotation(np.pi),initial)
     X_WGoal = X_O["goal"]
     X_G = {"initial": X_WStart, "goal": X_WGoal}
@@ -247,6 +249,8 @@ def MakeTrajectoryOptimized(plant, plant_context, X_G, X_O, wsg):
     
     trajs, times = MakeTrajectoryOptimized(plant, plant_context, X_G, X_O, wsg)
     
+    graph = pydot.graph_from_dot_data(diagram.GetGraphvizString())[0]
+    graph.write_jpg("system-diagrams/trajopt_output.jpg")
 
     PublishPositionTrajectory(trajs, context,
                             plant, visualizer)

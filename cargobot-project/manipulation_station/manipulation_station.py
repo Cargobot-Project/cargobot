@@ -11,22 +11,19 @@ from pydrake.geometry import (
     MeshcatVisualizerParams,
     Role,
 )
-
+meshcat = StartMeshcat()
 class ManipulationStation(BaseManipulationStation):
     def __init__(self, time_step: float, add_iiwa: bool = True, collision_model: str = "with_box_collision"):
-        super(ManipulationStation, self).__init__(time_step, add_iiwa, collision_model)
-        self.meshcat = StartMeshcat()
-        self.meshcat.Delete()
-        self.meshcat.DeleteAddedControls()
+        super().__init__(time_step, add_iiwa, collision_model)
         self.build_scenario()
         super().get_plant().Finalize()
-        self.visualizer = MeshcatVisualizer.AddToBuilder(super().get_builder(), super().get_scene_graph(), self.meshcat,
+        self.visualizer = MeshcatVisualizer.AddToBuilder(super().get_builder(), super().get_scene_graph(), meshcat,
         MeshcatVisualizerParams(role=Role.kIllustration))
         self.collision_visualizer = MeshcatVisualizer.AddToBuilder(
-                                    super().get_builder(), super().get_scene_graph(), self.meshcat,
+                                    super().get_builder(), super().get_scene_graph(), meshcat,
                                     MeshcatVisualizerParams(prefix="collision", role=Role.kProximity)
                                 )
-        self.meshcat.SetProperty("collision", "visible", False)
+        meshcat.SetProperty("collision", "visible", False)
 
         self.diagram = super().get_builder().Build()
         self.context = super().get_diagram().CreateDefaultContext()

@@ -45,6 +45,7 @@ def BoxSystem():
     diagram = builder.Build()
     diagram.set_name("depth_camera_demo_system")
     return diagram
+BoxSystem()
 
 def BoxPointCloud(normals=False, down_sample=True):
     system = BoxSystem()
@@ -111,7 +112,7 @@ class BoxIterativeClosestPoint(LeafSystem):
 
         output.set_value(X_WOhat)
 
-BoxIterativeClosestPoint()
+#BoxIterativeClosestPoint()
 
 
 class PickAndPlaceTrajectory(LeafSystem):
@@ -270,7 +271,7 @@ def icp_pick_and_place_demo():
     simulator.AdvanceTo(plan.end_time(plan.GetMyContextFromRoot(context)))
     visualizer.PublishRecording()
 
-icp_pick_and_place_demo()
+#icp_pick_and_place_demo()
 
 while True:
     time.sleep(1)

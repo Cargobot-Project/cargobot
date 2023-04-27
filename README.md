@@ -90,6 +90,10 @@ In our tests on W10, Meshcat Visualizer can be seen on Firefox but not Chrome. T
 
 In our tests on Ubuntu 20.04, Meshcat Visualizer can be seen on Chrome but not Firefox. Therefore, make sure that Chrome is downloaded on your Ubuntu local host. After you run code including visualizer. You can go to the link "localhost:7000" at Chrome and access the visualizer.
 
+#### MacOS
+
+It is not tested on MacOS yet.
+
 ## Manipulating Code in Docker Container from VSCode
 
 #TODO

@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import time
 
 from pydrake.common import FindResourceOrThrow, temp_directory
 from pydrake.geometry import (
@@ -212,7 +213,9 @@ def cargobot_inverse_kinematics(sim_time_step=0.001):
     #all_parser = Parser(all_plant)
 
     AddPackagePaths(parser)
+
     base_models = parser.AddAllModelsFromFile("/usr/cargobot/cargobot-project/trajopt/cargobot-models/all.dmd.yaml")
+
     iiwa = AddIiwa(plant,collision_model="with_box_collision")
     wsg = AddWsg(plant, iiwa, roll=0.0, welded=True, sphere=False)
     
@@ -258,3 +261,6 @@ def cargobot_inverse_kinematics(sim_time_step=0.001):
         collision_visualizer.GetMyContextFromRoot(context))
     
 cargobot_inverse_kinematics()
+
+while True:
+    time.sleep(1)

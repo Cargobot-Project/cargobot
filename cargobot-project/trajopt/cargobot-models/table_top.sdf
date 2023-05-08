@@ -2,8 +2,14 @@
 <sdf version="1.7">
   <model name="table_top">
     <link name="table_top_link">
+      <inertial>
+        <mass>100</mass>
+        <inertia>
+            <ixx>1008.3541666666667</ixx> <ixy>0.0</ixy> <ixz>0.0</ixz> <iyy>252.10416666666669 </iyy> <iyz>0.0</iyz> <izz>1260.4166666666667</izz> 
+        </inertia>
+      </inertial>
       <visual name="visual">
-        <pose>0 0 0.445 0 0 0</pose>
+        <pose>0 0 0 0 0 0</pose>
         <geometry>
           <box>
             <size>5.5 11.0 0.05</size>
@@ -14,7 +20,7 @@
         </material>
       </visual>
       <collision name="collision">
-        <pose>0 0 0.445  0 0 0</pose>
+        <pose>0 0 0 0 0 0</pose>
         <geometry>
           <box>
             <size>5.5 11.0 0.05</size>

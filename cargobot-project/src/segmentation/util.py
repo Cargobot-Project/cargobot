@@ -2,6 +2,7 @@ import os
 import time
 from copy import deepcopy
 from urllib.request import urlretrieve
+from typing import List
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -25,7 +26,11 @@ from torchvision.models.detection import MaskRCNN_ResNet50_FPN_Weights
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
 
-def get_instance_segmentation_model(num_classes):
+from scene.CameraSystem import cargobot_num_cameras, CameraSystem
+
+cargobot_num_classes = 6 # TBD
+
+def get_instance_segmentation_model(model_path: str, num_classes: int=cargobot_num_classes):
     # load an instance segmentation model pre-trained on COCO
     model = torchvision.models.detection.maskrcnn_resnet50_fpn(
         weights=MaskRCNN_ResNet50_FPN_Weights.DEFAULT, progress=False)
@@ -42,3 +47,124 @@ def get_instance_segmentation_model(num_classes):
     model.roi_heads.mask_predictor = MaskRCNNPredictor(in_features_mask,
                                                     hidden_layer,
                                                     num_classes)
+
+    model = get_instance_segmentation_model(num_classes)
+    device = torch.device(
+        'cuda') if torch.cuda.is_available() else torch.device('cpu')
+    model.load_state_dict(
+        torch.load(model_path, map_location=device))
+    model.eval()
+
+    model.to(device)
+
+    return model
+
+def get_predictions(model, cameras: List[CameraSystem]):
+    device = torch.device(
+        'cuda') if torch.cuda.is_available() else torch.device('cpu')
+    num_cameras = len(cameras)
+    with torch.no_grad():
+        predictions = []
+        for camera in cameras:
+            predictions.append(
+                model([Tf.to_tensor(camera.rgb_im[:, :, :3]).to(device)]))
+            
+    for i in range(num_cameras):
+        for k in predictions[i][0].keys():
+            if k == "masks":
+                predictions[i][0][k] = predictions[i][0][k].mul(
+                    255).byte().cpu().numpy()
+            else:
+                predictions[i][0][k] = predictions[i][0][k].cpu().numpy()
+
+def get_merged_masked_pcd(predictions, rgb_ims, depth_ims, project_depth_to_pC_funcs, X_WCs, mask_threshold=150):
+    """
+    predictions: The output of the trained network (one for each camera)
+    rgb_ims: RGBA images from each camera
+    depth_ims: Depth images from each camera
+    project_depth_to_pC_funcs: Functions that perform the pinhole camera operations to convert pixels
+        into points. See the analogous function in problem 5.2 to see how to use it.
+    X_WCs: Poses of the cameras in the world frame
+    """
+
+    pcd = []
+    for prediction, rgb_im, depth_im, project_depth_to_pC_func, X_WC in \
+            zip(predictions, rgb_ims, depth_ims, project_depth_to_pC_funcs, X_WCs):
+        # These arrays aren't the same size as the correct outputs, but we're
+        # just initializing them to something valid for now.
+        spatial_points = np.zeros((3, 1))
+        rgb_points = np.zeros((3, 1))
+
+        ######################################
+        # Your code here (populate spatial_points and rgb_points)
+        ######################################
+
+        mask_idx = np.argmax(prediction[0]['labels'] == mustard_ycb_idx)
+        mask = prediction[0]['masks'][mask_idx, 0]
+        mask_uvs = mask >= mask_threshold
+        #print(np.sum(mask_uvs))
+
+        img_h, img_w = depth_im.shape
+        v_range = np.arange(img_h)
+        u_range = np.arange(img_w)
+        depth_u, depth_v = np.meshgrid(u_range, v_range)
+        #mask_u, mask_v = np.array(prediction["mask"])
+        depth_pnts = np.dstack([depth_v, depth_u, depth_im])
+        depth_pnts = depth_pnts[mask_uvs].reshape([-1, 3])
+        
+        # point poses in camera frame
+        spatial_points = project_depth_to_pC_func(depth_pnts)
+        #spatial_points = X_WC @ spatial_points
+
+
+        #print(rgb_im.shape)
+        rgb_im = rgb_im[:, :, :3]
+
+        #print(rgb_im.shape)
+        img_h, img_w, img_c = rgb_im.shape
+        v_range = np.arange(img_h)
+        u_range = np.arange(img_w)
+        rgb_u, rgb_v = np.meshgrid(u_range, v_range)
+        #print(rgb_u.shape, rgb_v.shape)
+        #rgb_points = np.dstack([rgb_v, rgb_u, rgb_im])
+        rgb_points = np.dstack([rgb_im])
+        rgb_points = rgb_points[mask_uvs]
+        rgb_points = rgb_points.reshape([-1, 3])
+        
+        spatial_points = spatial_points.T
+        rgb_points = rgb_points.T
+
+        spatial_points = X_WC.rotation() @ spatial_points
+        #print("final spatial", spatial_points.shape)
+        spatial_points = spatial_points + np.concatenate([[X_WC.translation()]] * spatial_points.shape[1]).T
+
+        #print("spatial shape", spatial_points.shape)
+        #print("rgb shape", rgb_points.shape)
+        # You get an unhelpful RunTime error if your arrays are the wrong
+        # shape, so we'll check beforehand that they're the correct shapes.
+        assert len(spatial_points.shape
+                  ) == 2, "Spatial points is the wrong size -- should be 3 x N"
+        assert spatial_points.shape[
+            0] == 3, "Spatial points is the wrong size -- should be 3 x N"
+        assert len(rgb_points.shape
+                  ) == 2, "RGB points is the wrong size -- should be 3 x N"
+        assert rgb_points.shape[
+            0] == 3, "RGB points is the wrong size -- should be 3 x N"
+        assert rgb_points.shape[1] == spatial_points.shape[1]
+        print("spatial points shape", spatial_points.shape)
+        N = spatial_points.shape[1]
+        pcd.append(PointCloud(N, Fields(BaseField.kXYZs | BaseField.kRGBs)))
+        pcd[-1].mutable_xyzs()[:] = spatial_points
+        pcd[-1].mutable_rgbs()[:] = rgb_points
+        # Estimate normals
+        pcd[-1].EstimateNormals(radius=0.1, num_closest=30)
+        # Flip normals toward camera
+        pcd[-1].FlipNormalsTowardPoint(X_WC.translation())
+    
+    # Merge point clouds.
+    merged_pcd = Concatenate(pcd)
+    print("merged pcd size", merged_pcd.size())
+    print("merged pcd", merged_pcd.xyzs())
+    # Voxelize down-sample.  (Note that the normals still look reasonable)
+    #return merged_pcd
+    return merged_pcd.VoxelizedDownSample(voxel_size=0.005)

@@ -1,5 +1,6 @@
 from copy import deepcopy
 
+from typing import List
 import numpy as np
 
 class CameraSystem:
@@ -43,3 +44,13 @@ class CameraSystem:
         Y = (v-cy) * Z/fy
         pC = np.c_[X,Y,Z]
         return pC
+
+cargobot_num_cameras = 2
+
+def generate_cameras(environment_diagram, environment_context, meshcat, num_cameras:int = cargobot_num_cameras) -> List[CameraSystem]:
+    cameras = []
+
+    for i in range(num_cameras):
+        cameras.append(CameraSystem(i, meshcat, environment_diagram, environment_context))
+
+    return cameras

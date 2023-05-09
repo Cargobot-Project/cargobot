@@ -136,3 +136,4 @@ cargobot-project/perception/dataset2
 cargobot-project/perception/dataset_new
 cargobot-project/segmentation/clutter_maskrcnn_model.pt
 cargobot-project/segmentation/results.json
+cargobot-project/res/seg/*.pt

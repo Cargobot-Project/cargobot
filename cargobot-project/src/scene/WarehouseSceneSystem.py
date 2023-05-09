@@ -25,7 +25,7 @@ from manipulation.scenarios import AddRgbdSensors
 from IPython.display import HTML, SVG, display
 import pydot
 
-def BoxSystem(scene_path: str = "/usr/cargobot/cargobot-project/res/box_with_cameras.dmd.yaml", name="depth_camera_demo_system"):
+def WarehouseSceneSystem(scene_path: str="/usr/cargobot/cargobot-project/res/box_with_cameras.dmd.yaml", name="warehouse_scene_system"):
     builder = DiagramBuilder()
 
     # Create the physics engine + scene graph.

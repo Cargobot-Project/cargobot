@@ -278,5 +278,6 @@ def icp_pick_and_place_demo():
 
 icp_pick_and_place_demo()
 
+print("Finished running demo")
 while True:
     time.sleep(1)

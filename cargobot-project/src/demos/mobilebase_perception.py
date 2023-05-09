@@ -1,7 +1,5 @@
 import sys
-sys.path.append("/usr/cargobot/cargobot-project/src/scene")
-
-from scene import BoxSystem
+sys.path.append("/usr/cargobot/cargobot-project/src/")
 
 import os
 import time
@@ -30,11 +28,41 @@ from torchvision.models.detection import MaskRCNN_ResNet50_FPN_Weights
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
 
+from scene.WarehouseSceneSystem import WarehouseSceneSystem
+from scene.CameraSystem import CameraSystem, generate_cameras
+from segmentation.util import get_instance_segmentation_model, get_predictions, get_merged_masked_pcd
+from manip.grasp import find_antipodal_grasp
+
+
 # Start the visualizer.
 meshcat = StartMeshcat()
 
-model_file = 'clutter_maskrcnn_model.pt'
+# Get instance segmentation model
+print("Loading segmentation model...")
+model_file = '/usr/cargobot/cargobot-project/res/seg/box_maskrcnn_model_v2.pt'
+model = get_instance_segmentation_model(model_path=model_file)
+print("Loaded segmentation model.")
 
+# Set up the environment and cameras
+print("Setting up the environment...")
+environment_diagram, environment_context = WarehouseSceneSystem()
+cameras = generate_cameras(environment_diagram, environment_context, meshcat)
+print("Finished setting up the environment.")
 
+# Make prediction from all cameras
+print("Run inference on camera 1...")
+predictions = get_predictions(model, cameras)
 
+rgb_ims = [c.rgb_im for c in cameras]
+depth_ims = [c.depth_im for c in cameras]
+project_depth_to_pC_funcs = [c.project_depth_to_pC for c in cameras]
+X_WCs = [c.X_WC for c in cameras]
 
+pcd = get_merged_masked_pcd(predictions, rgb_ims, depth_ims, project_depth_to_pC_funcs, X_WCs)
+meshcat.SetObject("masked_cloud", pcd, point_size=0.003)
+print("Finished running inference on camera 1.")
+
+# Find grasp pose
+print("Finding optimal grasp pose...")
+find_antipodal_grasp(environment_diagram, environment_context, cameras, meshcat, predictions)
+print("Found optimal grasp pose.")

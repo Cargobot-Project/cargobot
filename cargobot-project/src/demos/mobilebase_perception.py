@@ -34,8 +34,13 @@ from segmentation.util import get_instance_segmentation_model, get_predictions, 
 from manip.grasp import find_antipodal_grasp
 from segmentation.plot import plot_camera_view, plot_predictions
 
-from pydrake.all import Simulator
+from pydrake.all import Simulator, RandomGenerator
 
+# Fix RNGs
+rng = np.random.default_rng(135)  # this is for python
+generator = RandomGenerator(rng.integers(0, 1000))  # this is for c++
+
+#print("rng type", type(rng))
 
 # Start the visualizer.
 meshcat = StartMeshcat()
@@ -61,9 +66,10 @@ visualizer.PublishRecording()
 print("Run inference on camera 0...")
 object_idx = 1
 predictions = get_predictions(model, cameras)
+#print("predictions type", type(predictions), type(predictions[0]))
 
 for i, camera in enumerate(cameras):
-    print("Camera", i)
+    #print("Camera", i)
     plot_camera_view(camera, i, f"./out/camera{i}.png")
 
 plot_predictions(predictions, object_idx, f"./out/")
@@ -81,6 +87,8 @@ print("Finished running inference on camera 0.\n")
 print("Finding optimal grasp pose...")
 find_antipodal_grasp(environment_diagram, environment_context, cameras, meshcat, predictions, object_idx)
 print("Found optimal grasp pose.\n")
+
+
 
 while True:
     time.sleep(1)

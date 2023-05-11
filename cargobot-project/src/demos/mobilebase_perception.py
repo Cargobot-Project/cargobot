@@ -48,14 +48,14 @@ print("Loaded segmentation model.\n")
 
 # Set up the environment and cameras
 print("Setting up the environment...")
-environment_diagram, environment_context, visualizer = WarehouseSceneSystem(meshcat, scene_path="/usr/cargobot/cargobot-project/res/demo_envs/mobilebase_perception_demo.dmd.yaml")
+environment_diagram, environment_context, visualizer, plan = WarehouseSceneSystem(meshcat, scene_path="/usr/cargobot/cargobot-project/res/demo_envs/mobilebase_perception_demo.dmd.yaml")
 
-visualizer.StartRecording()
+
 cameras = generate_cameras(environment_diagram, environment_context, meshcat)
 print("Finished setting up the environment.\n")
 
 simulator = Simulator(environment_diagram)
-visualizer.PublishRecording()
+
 
 # Make prediction from all cameras
 print("Run inference on camera 0...")
@@ -81,6 +81,16 @@ print("Finished running inference on camera 0.\n")
 print("Finding optimal grasp pose...")
 find_antipodal_grasp(environment_diagram, environment_context, cameras, meshcat, predictions, object_idx)
 print("Found optimal grasp pose.\n")
+
+simulator = Simulator(environment_diagram)
+context = simulator.get_context()
+
+simulator.Initialize()
+
+
+visualizer.StartRecording(False)
+simulator.AdvanceTo(plan.end_time(plan.GetMyContextFromRoot(context)))
+visualizer.PublishRecording()
 
 while True:
     time.sleep(1)

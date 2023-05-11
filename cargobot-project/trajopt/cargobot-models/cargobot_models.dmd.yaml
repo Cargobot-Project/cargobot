@@ -8,7 +8,7 @@ directives:
         X_PF:
             base_frame: world
             rotation: !Rpy { deg: [0, 0, 0]}
-            translation: [0, 0, -0.5]
+            translation: [0, 0, -.025]
     - add_model:
         name: table_top
         file: file:///usr/cargobot/cargobot-project/trajopt/cargobot-models/table_top.sdf

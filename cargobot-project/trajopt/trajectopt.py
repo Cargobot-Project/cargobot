@@ -144,32 +144,38 @@ def MakeTrajectoryOptimized(plant, plant_context, X_G, X_O, wsg):
     trajopt, result = Optimize(plant, plant_context, X_G["initial"], X_G["prepick"], wsg)
     times ["prepick"] = times["initial"] + result.get_x_val()[-1]
     trajs.append(trajopt.ReconstructTrajectory(result))
-
-    trajopt, result = Optimize(plant, plant_context, X_G["prepick"], X_G["pick"],wsg)
+    print(times)
+    trajopt, result = Optimize(plant, plant_context, X_G["prepick"], X_G["pick"], wsg)
     times["pick_start"] = times["prepick"] + result.get_x_val()[-1]
+    print(times)
     trajs.append(trajopt.ReconstructTrajectory(result))
     #trajopt, result =Optimize(plant, plant_context, X_G["pick"], X_G["pick"],wsg)
     #trajs.append(trajopt.ReconstructTrajectory(result))
     times["pick_end"] = times["pick_start"] + result.get_x_val()[-1]
-    
+    print(times)
     trajopt, result = Optimize(plant, plant_context, X_G["pick"], X_G["prepick"],wsg)
-    times ["postpick"] = times ["pick_end"] + result.get_x_val()[-1]
+    times["postpick"] = times ["pick_end"] + result.get_x_val()[-1]
+    print(times)
     trajs.append(trajopt.ReconstructTrajectory(result))
     
     trajopt, result = Optimize(plant, plant_context, X_G["prepick"], X_G["preplace"],wsg)
-    times ["preplace"] = times ["postpick"] + result.get_x_val()
+    times["preplace"] = times["postpick"] + result.get_x_val()[-1]
+    print(result.get_x_val()[-1])
     trajs.append(trajopt.ReconstructTrajectory(result))
     
     trajopt, result =Optimize(plant, plant_context, X_G["preplace"], X_G["place"],wsg)
     times["place_start"] = times["preplace"] + result.get_x_val()[-1]
+    
     trajs.append(trajopt.ReconstructTrajectory(result))
     #trajopt, result =Optimize(plant, plant_context, X_G["place"], X_G["place"],wsg)
     #trajs.append(trajopt.ReconstructTrajectory(result))
     times["place_end"] = times["place_start"] + result.get_x_val()[-1]
-    
+    print(times)
     trajopt, result = Optimize(plant, plant_context, X_G["place"], X_G["preplace"],wsg)
     times["postplace"] = times["place_end"] + result.get_x_val()[-1]
+    print(times)
     trajs.append(trajopt.ReconstructTrajectory(result))
+    
     return trajs, times
 
 def PublishPositionTrajectory(trajectory,

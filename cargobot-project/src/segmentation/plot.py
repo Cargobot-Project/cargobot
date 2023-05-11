@@ -12,7 +12,7 @@ def plot_camera_view(camera: CameraSystem, camera_idx: int, output_path: str=Non
 
 def plot_predictions(predictions, object_idx: int, output_dir: str=None):
     for i, prediction in enumerate(predictions):
-        print(prediction)
+        #print(prediction)
         mask_idx = np.argmax(prediction[0]['labels'] == object_idx)
         mask = prediction[0]['masks'][mask_idx,0]
 

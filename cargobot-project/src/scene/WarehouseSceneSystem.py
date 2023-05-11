@@ -25,7 +25,7 @@ from manipulation.scenarios import AddRgbdSensor, AddRgbdSensors
 from IPython.display import HTML, SVG, display
 import pydot
 
-from pydrake.all import DepthImageToPointCloud, BaseField
+from pydrake.all import DepthImageToPointCloud, BaseField, MeshcatVisualizerParams, Role, MeshcatVisualizer, PickAndPlaceTrajectory
 
 from scene.CameraSystem import generate_cameras
 from scene.SceneBuilder import add_rgbd_sensors, CARGOBOT_CAMERA_POSES
@@ -51,6 +51,23 @@ def WarehouseSceneSystem(
         meshcat = builder.AddSystem(MeshcatVisualizer(scene_graph))
         builder.Connect(scene_graph.get_query_output_port(),
                         meshcat.get_geometry_query_input_port())
+        
+    # Add arm
+    robot = diagram.GetSubsystemByName("iiwa_controller").get_multibody_plant_for_control()
+    
+    # Set up differential inverse kinematics.
+    diff_ik = AddIiwaDifferentialIK(builder, robot)
+    plan = builder.AddSystem(PickAndPlaceTrajectory(plant))
+    
+    builder.Connect(diff_ik.get_output_port(),
+                    diagram.GetInputPort("iiwa_position"))
+    builder.Connect(plan.GetOutputPort("X_WG"),
+                    diff_ik.get_input_port(0))
+    builder.Connect(diagram.GetOutputPort("iiwa_state_estimated"),
+                    diff_ik.GetInputPort("robot_state"))
+
+    builder.Connect(plan.GetOutputPort("wsg_position"),
+                    diagram.GetInputPort("wsg_position"))
 
     # Adds predefined cameras
     if add_cameras:
@@ -83,99 +100,11 @@ def WarehouseSceneSystem(
             )
 
             builder.ExportOutput(to_point_cloud.point_cloud_output_port(), f"camera{i}_point_cloud")
-            """
-            for index in range(plant.num_model_instances()):
-                model_instance_index = ModelInstanceIndex(index)
-                model_name = plant.GetModelInstanceName(model_instance_index)
-                print("-------> model name", model_name)
-                if model_name.startswith(f"camera{i}"):
-                    print("-------> found index", index)
-                    body_index = plant.GetBodyIndices(model_instance_index)[0]
 
-                    builder.Connect(
-                        scene_graph.get_query_output_port(),
-                        camera.query_object_input_port(),
-                    )
-
-                    # Export the camera outputs
-                    builder.ExportOutput(
-                        camera.color_image_output_port(), f"{model_name}_rgb_image"
-                    )
-                    builder.ExportOutput(
-                        camera.depth_image_32F_output_port(), f"{model_name}_depth_image"
-                    )
-                    builder.ExportOutput(
-                        camera.label_image_output_port(), f"{model_name}_label_image"
-                    )
-
-                    # Add a system to convert the camera output into a point cloud
-                    to_point_cloud = builder.AddSystem(
-                        DepthImageToPointCloud(
-                            camera_info=camera.depth_camera_info(),
-                            fields=BaseField.kXYZs | BaseField.kRGBs,
-                        )
-                    )
-                    builder.Connect(
-                        camera.depth_image_32F_output_port(),
-                        to_point_cloud.depth_image_input_port(),
-                    )
-                    builder.Connect(
-                        camera.color_image_output_port(),
-                        to_point_cloud.color_image_input_port(),
-                    )
-
-                    class ExtractBodyPose(LeafSystem):
-                        def __init__(self, body_index):
-                            LeafSystem.__init__(self)
-                            self.body_index = body_index
-                            self.DeclareAbstractInputPort(
-                                "poses",
-                                plant.get_body_poses_output_port().Allocate(),
-                            )
-
-                            self.DeclareAbstractOutputPort(
-                                "pose",
-                                #lambda: AbstractValue.Make(RigidTransform()),
-                                lambda: AbstractValue.Make(RigidTransform()),
-                                self.CalcOutput,
-                            )
-
-                        def CalcOutput(self, context, output):
-                            poses = self.EvalAbstractInput(context, 0).get_value()
-                            pose = poses[int(self.body_index)]
-                            output.get_mutable_value().set(
-                                pose.rotation(), pose.translation()
-                            )
-
-                    camera_pose = builder.AddSystem(ExtractBodyPose(body_index))
-                    builder.Connect(
-                        plant.get_body_poses_output_port(),
-                        camera_pose.get_input_port(),
-                    )
-                    builder.Connect(
-                        camera_pose.get_output_port(),
-                        to_point_cloud.GetInputPort("camera_pose"),
-                    )
-
-                    # Export the point cloud output.
-                    builder.ExportOutput(
-                        to_point_cloud.point_cloud_output_port(),
-                        f"{model_name}_point_cloud",
-                    )
-                """
-
-
-        #add_rgbd_sensors(builder, plant, scene_graph, poses=CARGOBOT_CAMERA_POSES)
-        """
-        for i, X_WC in enumerate(CARGOBOT_CAMERA_POSES):
-            camera = AddRgbdSensor(builder, scene_graph, X_WC)
-            builder.ExportOutput(camera.color_image_output_port(), f"camera{i}_rgb_image")
-            builder.ExportOutput(camera.label_image_output_port(), f"camera{i}_label_image")
-            builder.ExportOutput(camera.depth_image_32F_output_port(), f"camera{i}_depth_image")
-        """
+    visualizer = MeshcatVisualizer.AddToBuilder(builder, scene_graph, meshcat, MeshcatVisualizerParams(role=Role.kIllustration))
 
     diagram = builder.Build()
     diagram.set_name(name)
     context = diagram.CreateDefaultContext()
 
-    return diagram, context #, cameras
+    return diagram, context, visualizer #, cameras

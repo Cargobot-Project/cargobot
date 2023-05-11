@@ -34,6 +34,8 @@ from segmentation.util import get_instance_segmentation_model, get_predictions, 
 from manip.grasp import find_antipodal_grasp
 from segmentation.plot import plot_camera_view, plot_predictions
 
+from pydrake.all import Simulator
+
 
 # Start the visualizer.
 meshcat = StartMeshcat()
@@ -46,11 +48,14 @@ print("Loaded segmentation model.\n")
 
 # Set up the environment and cameras
 print("Setting up the environment...")
-environment_diagram, environment_context = WarehouseSceneSystem(meshcat, scene_path="/usr/cargobot/cargobot-project/res/demo_envs/mobilebase_perception_demo.dmd.yaml")
+environment_diagram, environment_context, visualizer = WarehouseSceneSystem(meshcat, scene_path="/usr/cargobot/cargobot-project/res/demo_envs/mobilebase_perception_demo.dmd.yaml")
+
+visualizer.StartRecording()
 cameras = generate_cameras(environment_diagram, environment_context, meshcat)
 print("Finished setting up the environment.\n")
 
-time.sleep(10)
+simulator = Simulator(environment_diagram)
+visualizer.PublishRecording()
 
 # Make prediction from all cameras
 print("Run inference on camera 0...")

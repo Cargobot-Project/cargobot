@@ -151,7 +151,7 @@ def get_merged_masked_pcd(predictions, rgb_ims, depth_ims, project_depth_to_pC_f
         assert rgb_points.shape[
             0] == 3, "RGB points is the wrong size -- should be 3 x N"
         assert rgb_points.shape[1] == spatial_points.shape[1]
-        print("spatial points shape", spatial_points.shape)
+        #print("spatial points shape", spatial_points.shape)
         N = spatial_points.shape[1]
         pcd.append(PointCloud(N, Fields(BaseField.kXYZs | BaseField.kRGBs)))
         pcd[-1].mutable_xyzs()[:] = spatial_points
@@ -163,8 +163,8 @@ def get_merged_masked_pcd(predictions, rgb_ims, depth_ims, project_depth_to_pC_f
     
     # Merge point clouds.
     merged_pcd = Concatenate(pcd)
-    print("merged pcd size", merged_pcd.size())
-    print("merged pcd", merged_pcd.xyzs())
+    #print("merged pcd size", merged_pcd.size())
+    #print("merged pcd", merged_pcd.xyzs())
     # Voxelize down-sample.  (Note that the normals still look reasonable)
     #return merged_pcd
     return merged_pcd.VoxelizedDownSample(voxel_size=0.005)

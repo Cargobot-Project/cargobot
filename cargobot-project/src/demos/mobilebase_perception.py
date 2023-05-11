@@ -50,9 +50,11 @@ environment_diagram, environment_context = WarehouseSceneSystem(meshcat, scene_p
 cameras = generate_cameras(environment_diagram, environment_context, meshcat)
 print("Finished setting up the environment.\n")
 
+time.sleep(10)
+
 # Make prediction from all cameras
 print("Run inference on camera 0...")
-object_idx = 2
+object_idx = 1
 predictions = get_predictions(model, cameras)
 
 for i, camera in enumerate(cameras):

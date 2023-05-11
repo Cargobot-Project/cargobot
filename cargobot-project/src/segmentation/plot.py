@@ -12,8 +12,9 @@ def plot_camera_view(camera: CameraSystem, camera_idx: int, output_path: str=Non
 
 def plot_predictions(predictions, object_idx: int, output_dir: str=None):
     for i, prediction in enumerate(predictions):
-        mask_idx = np.argmax(predictions[i][0]['labels'] == object_idx)
-        mask = predictions[i][0]['masks'][mask_idx,0]
+        print(prediction)
+        mask_idx = np.argmax(prediction[0]['labels'] == object_idx)
+        mask = prediction[0]['masks'][mask_idx,0]
 
         plt.imshow(mask)
         plt.title("Mask from Camera " + str(i))

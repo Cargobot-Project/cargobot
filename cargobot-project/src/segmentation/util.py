@@ -13,7 +13,6 @@ import torchvision.transforms.functional as Tf
 from IPython.display import clear_output, display
 from manipulation import running_as_notebook
 from manipulation.clutter import GenerateAntipodalGraspCandidate
-from manipulation.scenarios import AddRgbdSensors
 from manipulation.utils import AddPackagePaths, FindResource, LoadDataResource
 from pydrake.all import (BaseField, Concatenate, Fields, MeshcatVisualizer,
                          MeshcatVisualizerParams, PointCloud, Quaternion, Rgba,
@@ -48,7 +47,6 @@ def get_instance_segmentation_model(model_path: str, num_classes: int=cargobot_n
                                                     hidden_layer,
                                                     num_classes)
 
-    model = get_instance_segmentation_model(num_classes)
     device = torch.device(
         'cuda') if torch.cuda.is_available() else torch.device('cpu')
     model.load_state_dict(
@@ -76,8 +74,10 @@ def get_predictions(model, cameras: List[CameraSystem]):
                     255).byte().cpu().numpy()
             else:
                 predictions[i][0][k] = predictions[i][0][k].cpu().numpy()
+    
+    return predictions
 
-def get_merged_masked_pcd(predictions, rgb_ims, depth_ims, project_depth_to_pC_funcs, X_WCs, mask_threshold=150):
+def get_merged_masked_pcd(predictions, rgb_ims, depth_ims, project_depth_to_pC_funcs, X_WCs, object_idx: int, mask_threshold=150):
     """
     predictions: The output of the trained network (one for each camera)
     rgb_ims: RGBA images from each camera
@@ -99,7 +99,7 @@ def get_merged_masked_pcd(predictions, rgb_ims, depth_ims, project_depth_to_pC_f
         # Your code here (populate spatial_points and rgb_points)
         ######################################
 
-        mask_idx = np.argmax(prediction[0]['labels'] == mustard_ycb_idx)
+        mask_idx = np.argmax(prediction[0]['labels'] == object_idx)
         mask = prediction[0]['masks'][mask_idx, 0]
         mask_uvs = mask >= mask_threshold
         #print(np.sum(mask_uvs))

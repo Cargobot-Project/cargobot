@@ -27,7 +27,7 @@ from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
 
 from segmentation.util import get_merged_masked_pcd
 
-def find_antipodal_grasp(environment_diagram, environment_context, cameras, meshcat, predictions):
+def find_antipodal_grasp(environment_diagram, environment_context, cameras, meshcat, predictions, object_idx: int):
     rng = np.random.default_rng()
 
     # Another diagram for the objects the robot "knows about": gripper, cameras, bins.  Think of this as the model in the robot's head.
@@ -52,7 +52,7 @@ def find_antipodal_grasp(environment_diagram, environment_context, cameras, mesh
     X_WCs = [c.X_WC for c in cameras]
 
     cloud = get_merged_masked_pcd(
-        predictions, rgb_ims, depth_ims, project_depth_to_pC_funcs, X_WCs)
+        predictions, rgb_ims, depth_ims, project_depth_to_pC_funcs, X_WCs, object_idx)
 
     plant_context = plant.GetMyContextFromRoot(context)
     scene_graph_context = scene_graph.GetMyContextFromRoot(context)

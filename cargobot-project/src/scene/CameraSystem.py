@@ -1,7 +1,10 @@
 from copy import deepcopy
 
+from pydrake.all import RigidTransform, LeafSystem
 from typing import List
 import numpy as np
+
+from scene.SceneBuilder import CARGOBOT_CAMERA_POSES
 
 class CameraSystem:
     def __init__(self, idx, meshcat, diagram, context):
@@ -47,10 +50,10 @@ class CameraSystem:
 
 cargobot_num_cameras = 2
 
-def generate_cameras(environment_diagram, environment_context, meshcat, num_cameras:int = cargobot_num_cameras) -> List[CameraSystem]:
+def generate_cameras(environment_diagram, environment_context, meshcat, camera_poses: List[RigidTransform]=CARGOBOT_CAMERA_POSES) -> List[CameraSystem]:
     cameras = []
 
-    for i in range(num_cameras):
+    for i in range(len(camera_poses)):
         cameras.append(CameraSystem(i, meshcat, environment_diagram, environment_context))
 
     return cameras

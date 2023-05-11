@@ -43,13 +43,13 @@ def add_rgbd_sensors(builder, plant, scene_graph, poses: List[RigidTransform]=CA
 
     model_instance_prefix = "camera"
     cam_index = 0
-    print("poses", poses)
+    #print("poses", poses)
     for index in range(plant.num_model_instances()):
         model_instance_index = ModelInstanceIndex(index)
         model_name = plant.GetModelInstanceName(model_instance_index)
-        print("-------> model name", model_name)
+        #print("-------> model name", model_name)
         if model_name.startswith(model_instance_prefix):
-            print("-------> found index", index)
+            #print("-------> found index", index)
             body_index = plant.GetBodyIndices(model_instance_index)[0]
             rgbd = builder.AddSystem(
                 RgbdSensor(
@@ -198,3 +198,4 @@ def add_point_cloud_port(builder, plant, rgbd: RgbdSensor):
                 to_point_cloud.point_cloud_output_port(),
                 f"{model_name}_point_cloud",
             )
+

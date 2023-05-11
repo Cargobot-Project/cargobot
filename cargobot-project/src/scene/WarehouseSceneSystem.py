@@ -25,12 +25,14 @@ from manipulation.scenarios import AddRgbdSensors
 from IPython.display import HTML, SVG, display
 import pydot
 
-from pydrake.all import DepthImageToPointCloud, BaseField, MeshcatVisualizerParams, Role, MeshcatVisualizer
-from manip.motion import *
+from pydrake.all import (DepthImageToPointCloud, BaseField, MeshcatVisualizerParams, Role,
+                         MeshcatVisualizer)
 
 from scene.CameraSystem import generate_cameras
 from scene.SceneBuilder import add_rgbd_sensors, CARGOBOT_CAMERA_POSES
-from demos.overwrite import *
+from scene.utils import ConfigureParser
+from manip.motion import PickAndPlaceTrajectory
+
 
 def WarehouseSceneSystem(
         meshcat,
@@ -56,14 +58,15 @@ def WarehouseSceneSystem(
         meshcat = builder.AddSystem(MeshcatVisualizer(scene_graph))
         builder.Connect(scene_graph.get_query_output_port(),
                         meshcat.get_geometry_query_input_port())
-        
+
+    """    
     # Add arm
     robot = station.GetSubsystemByName("iiwa_controller").get_multibody_plant_for_control()
     
     # Set up differential inverse kinematics.
     diff_ik = AddIiwaDifferentialIK(builder, robot)
     plan = builder.AddSystem(PickAndPlaceTrajectory(plant))
-    
+
     builder.Connect(diff_ik.get_output_port(),
                     station.GetInputPort("iiwa_position"))
     builder.Connect(plan.GetOutputPort("X_WG"),
@@ -79,6 +82,8 @@ def WarehouseSceneSystem(
     
     builder.Connect(icp.GetOutputPort("X_WO"), plan.GetInputPort("X_WO"))
 
+    bin_body = plant.GetBodyByName("bin_dasdasdsabase")
+    """
     # Adds predefined cameras
     if add_cameras:
         print("--> Adding cameras...")
@@ -119,3 +124,15 @@ def WarehouseSceneSystem(
     context = diagram.CreateDefaultContext()
 
     return diagram, context, visualizer, plan #, cameras
+
+def make_internal_model():
+    """
+    Makes an internal diagram for only the objects we know about, like truck, floor, gripper etc.
+    """
+    builder = DiagramBuilder()
+    plant, scene_graph = AddMultibodyPlantSceneGraph(builder, time_step=0.001)
+    parser = Parser(plant)
+    ConfigureParser(parser)
+    parser.AddModelsFromUrl("package://manipulation/clutter_planning.dmd.yaml")
+    plant.Finalize()
+    return builder.Build(), plant, scene_graph

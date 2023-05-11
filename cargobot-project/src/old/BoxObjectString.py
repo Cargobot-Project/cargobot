@@ -40,7 +40,7 @@ from manipulation.scenarios import (AddRgbdSensor, AddShape, ycb)
 
 
 class BoxObjectString():
-    def __init__(self, color, w, d, h, mass, texture):
+    def __init__(self, color, w, d, h, mass, texture, position, rotation):
         self.color = color
         self.inertia = self.calculate_box_inertia(mass, w, d, h)
         self.w = w
@@ -48,6 +48,8 @@ class BoxObjectString():
         self.h = h
         self.mass = mass
         self.texture = texture
+        self.position = position
+        self.rotation = rotation
 
     def calculate_box_inertia(self, m, w, d, h):
         Iw = (m/12.0)*(pow(d,2)+pow(h,2))
@@ -74,38 +76,39 @@ class BoxObjectString():
     def generate_sdf_string(self, name):
         color_text = self.return_color_and_texture()
         sdf = """
-<?xml version="1.0"?>
-<sdf version="1.7">
-  <model name=""" + '"'+  name + '"'+ """>
-    <link name=""" + '"'+  name + '"'+ """>
-      <inertial>
-        <mass>""" + str(self.mass) + """</mass>
-        <inertia>
-            """ + self.inertia+ """ 
-        </inertia>
-      </inertial>
-      <visual name="visual">
-        <pose>0 0 0 0 0 0</pose>
-        <geometry>
-          <box>
-            <size>"""+ str(self.w) + """ """ + str(self.d) + """ """ + str(self.h) + """</size>
-          </box>
-        </geometry>
-        <material>
-        """+color_text+"""
-      </material>
-      </visual>
-      <collision name="collision">
-        <pose>0 0 0 0 0 0</pose>
-        <geometry>
-          <box> 
-            <size>"""+ str(self.w) + """ """ + str(self.d) + """ """ + str(self.h) + """</size>
-          </box>
-        </geometry>
-      </collision>
-      
-    </link>
-  </model>
-</sdf>"""
+              <?xml version="1.0"?>
+              <sdf version="1.7">
+                <model name=""" + '"'+  name + '"'+ """>
+                  <link name=""" + '"'+  name + '"'+ """>
+                    <inertial>
+                      <mass>""" + str(self.mass) + """</mass>
+                      <inertia>
+                          """ + self.inertia+ """ 
+                      </inertia>
+                    </inertial>
+                    <visual name="visual">
+                      <pose>""" + f"{self.position[0]} {self.position[1]} {self.position[2]} " + f"{self.rotation[0]} {self.rotation[1]} {self.rotation[2]}" +"""</pose>
+                      <geometry>
+                        <box>
+                          <size>"""+ str(self.w) + """ """ + str(self.d) + """ """ + str(self.h) + """</size>
+                        </box>
+                      </geometry>
+                      <material>
+                      """+color_text+"""
+                    </material>
+                    </visual>
+                    <collision name="collision">
+                      <pose>0 0 0 0 0 0</pose>
+                      <geometry>
+                        <box> 
+                          <size>"""+ str(self.w) + """ """ + str(self.d) + """ """ + str(self.h) + """</size>
+                        </box>
+                      </geometry>
+                    </collision>
+                    
+                  </link>
+                </model>
+              </sdf>"""
+        
         return sdf
 

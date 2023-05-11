@@ -27,7 +27,7 @@ from manipulation.utils import FindResource, AddPackagePaths
 from manipulation.scenarios import AddRgbdSensors
 from IPython.display import HTML, SVG, display
 import pydot
-
+from scene.SceneGeneration import * 
 
 def AddIiwa(plant, collision_model="no_collision"):
     sdf_path = "/usr/cargobot/cargobot-project/trajopt/cargobot-models/mobile_iiwa.sdf"
@@ -55,7 +55,8 @@ def MakeManipulationStation(model_directives=None,
                             wsg_prefix="wsg",
                             camera_prefix="camera",
                             prefinalize_callback=None,
-                            package_xmls=[]):
+                            package_xmls=[],
+                            box_cnt=5):
 
     builder = DiagramBuilder()
 
@@ -74,6 +75,8 @@ def MakeManipulationStation(model_directives=None,
         parser.AddModels(filename)
     if prefinalize_callback:
         prefinalize_callback(plant)
+    
+    generate_boxes(plant, parser, box_cnt)
     plant.Finalize()
 
     for i in range(plant.num_model_instances()):

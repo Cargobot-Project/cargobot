@@ -83,7 +83,7 @@ class Planner(LeafSystem):
         self.DeclareVectorOutputPort("wsg_position", 1, self.CalcWsgPosition)
 
         # For GoHome mode.
-        num_positions = 7
+        num_positions = len(plant.GetPositions())
         self._iiwa_position_index = self.DeclareVectorInputPort(
             "iiwa_position", num_positions
         ).get_index()

@@ -37,7 +37,7 @@ from pydrake.all import (AddMultibodyPlantSceneGraph, Box,
 from manipulation import running_as_notebook
 from manipulation.scenarios import (AddRgbdSensor, AddShape, ycb)
 import json
-from BoxObjectString import BoxObjectString
+from old.BoxObjectString import *
 
 
 

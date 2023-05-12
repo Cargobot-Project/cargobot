@@ -43,11 +43,12 @@ class Planner(LeafSystem):
         self.DeclareAbstractInputPort(
             "body_poses", AbstractValue.Make([RigidTransform()])
         )
-        """
+        
         self._x_bin_grasp_index = self.DeclareAbstractInputPort(
-            "x_bin_grasp", AbstractValue.Make((np.inf, RigidTransform()))
+            "grasp", AbstractValue.Make((np.inf, RigidTransform()))
         ).get_index()
-        self._y_bin_grasp_index = self.DeclareAbstractInputPort(
+        
+        """self._y_bin_grasp_index = self.DeclareAbstractInputPort(
             "y_bin_grasp", AbstractValue.Make((np.inf, RigidTransform()))
         ).get_index()
         """

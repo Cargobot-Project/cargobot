@@ -32,7 +32,10 @@ from scene.CameraSystem import generate_cameras
 from scene.SceneBuilder import add_rgbd_sensors, CARGOBOT_CAMERA_POSES
 from scene.utils import ConfigureParser
 from manip.motion import *
+from manip.grasp import *
 from demos.overwrite import *
+from scene.CameraSystem import *
+
 
 def WarehouseSceneSystem(
         meshcat,
@@ -60,7 +63,7 @@ def WarehouseSceneSystem(
                         meshcat.get_geometry_query_input_port())
 
         
-    # Add arm
+    """# Add arm
     robot = station.GetSubsystemByName("iiwa_controller").get_multibody_plant_for_control()
     
     # Set up differential inverse kinematics.
@@ -80,19 +83,23 @@ def WarehouseSceneSystem(
     builder.Connect(station.GetOutputPort("body_poses"),
                     plan.GetInputPort("body_poses"))
     
-    builder.Connect(icp.GetOutputPort("X_WO"), plan.GetInputPort("X_WO"))
+    builder.Connect(icp.GetOutputPort("X_WO"), plan.GetInputPort("X_WO"))"""
 
-    bin_body = plant.GetBodyByName("bin_dasdasdsabase")
     
+
+    to_point_clouds = list()
+    rgb_ports = list()
+    depth_ports = list()
+
     # Adds predefined cameras
     if add_cameras:
         print("--> Adding cameras...")
         for i, X_WC in enumerate(CARGOBOT_CAMERA_POSES):
             camera = AddRgbdSensor(builder, scene_graph, X_WC, output_port=station.GetOutputPort("query_object"))
             camera.set_name(f"camera{i}")
-            builder.ExportOutput(camera.color_image_output_port(), f"camera{i}_rgb_image")
-            builder.ExportOutput(camera.label_image_output_port(), f"camera{i}_label_image")
-            builder.ExportOutput(camera.depth_image_32F_output_port(), f"camera{i}_depth_image")
+            rgb_ports.append(camera.color_image_output_port())
+            depth_ports.append(camera.depth_image_32F_output_port())
+            #builder.ExportOutput(camera.label_image_output_port(), f"camera{i}_label_image")
 
             to_point_cloud = builder.AddSystem(
                 DepthImageToPointCloud(
@@ -114,7 +121,9 @@ def WarehouseSceneSystem(
                 to_point_cloud.camera_pose_input_port()
             )
 
-            builder.ExportOutput(to_point_cloud.point_cloud_output_port(), f"camera{i}_point_cloud")
+            to_point_clouds.append(to_point_cloud.point_cloud_output_port())
+
+    planner = wire_ports(builder, plant, station, to_point_clouds, rgb_ports, depth_ports)
 
     visualizer = MeshcatVisualizer.AddToBuilder(
         builder, station.GetOutputPort("query_object"), meshcat)
@@ -123,7 +132,9 @@ def WarehouseSceneSystem(
     diagram.set_name(name)
     context = diagram.CreateDefaultContext()
 
-    return diagram, context, visualizer, plan #, cameras
+    return diagram, context, visualizer, planner #, cameras
+
+
 
 def make_internal_model():
     """
@@ -132,79 +143,45 @@ def make_internal_model():
     builder = DiagramBuilder()
     plant, scene_graph = AddMultibodyPlantSceneGraph(builder, time_step=0.001)
     parser = Parser(plant)
-    ConfigureParser(parser)
-    parser.AddModelsFromUrl("package://manipulation/clutter_planning.dmd.yaml")
+    parser.AddModels("/usr/cargobot/cargobot-project/res/demo_envs/mobilebase_perception_demo.dmd.yaml")
     plant.Finalize()
     return builder.Build(), plant, scene_graph
 
 
-def wire_ports(diagram, plant, visualizer, plan):
-    y_bin_grasp_selector = builder.AddSystem(
+def wire_ports( builder, plant, station, to_point_clouds, rgb_ports, depth_ports):
+    grasp_selector = builder.AddSystem(
         GraspSelector(
             plant,
-            plant.GetModelInstanceByName("bin0"),
-            camera_body_indices=[
-                plant.GetBodyIndices(plant.GetModelInstanceByName("camera0"))[
-                    0
-                ],
-                plant.GetBodyIndices(plant.GetModelInstanceByName("camera1"))[
-                    0
-                ],
-                plant.GetBodyIndices(plant.GetModelInstanceByName("camera2"))[
-                    0
-                ],
-            ],
+            plant.GetModelInstanceByName("table_top")#,
+            #camera_body_indices=[
+                #plant.GetBodyIndices(plant.GetModelInstanceByName("camera0"))[
+                 #   0
+                #],
+               # plant.GetBodyIndices(plant.GetModelInstanceByName("camera1"))[
+                #    0
+                #],
+            #],
         )
     )
+    
     builder.Connect(
-        station.GetOutputPort("camera0_point_cloud"),
-        y_bin_grasp_selector.get_input_port(0),
-    )
-    builder.Connect(
-        station.GetOutputPort("camera1_point_cloud"),
-        y_bin_grasp_selector.get_input_port(1),
-    )
-    builder.Connect(
-        station.GetOutputPort("camera2_point_cloud"),
-        y_bin_grasp_selector.get_input_port(2),
-    )
-    builder.Connect(
-        station.GetOutputPort("body_poses"),
-        y_bin_grasp_selector.GetInputPort("body_poses"),
+        rgb_ports[0],
+        grasp_selector.get_input_port(0),
     )
 
-    x_bin_grasp_selector = builder.AddSystem(
-        GraspSelector(
-            plant,
-            plant.GetModelInstanceByName("bin1"),
-            camera_body_indices=[
-                plant.GetBodyIndices(plant.GetModelInstanceByName("camera3"))[
-                    0
-                ],
-                plant.GetBodyIndices(plant.GetModelInstanceByName("camera4"))[
-                    0
-                ],
-                plant.GetBodyIndices(plant.GetModelInstanceByName("camera5"))[
-                    0
-                ],
-            ],
-        )
-    )
     builder.Connect(
-        station.GetOutputPort("camera3_point_cloud"),
-        x_bin_grasp_selector.get_input_port(0),
+        depth_ports[0],
+        grasp_selector.get_input_port(1),
     )
+    
     builder.Connect(
-        station.GetOutputPort("camera4_point_cloud"),
-        x_bin_grasp_selector.get_input_port(1),
+
+        grasp_selector.get_input_port(1)
     )
-    builder.Connect(
-        station.GetOutputPort("camera5_point_cloud"),
-        x_bin_grasp_selector.get_input_port(2),
-    )
+
     builder.Connect(
         station.GetOutputPort("body_poses"),
-        x_bin_grasp_selector.GetInputPort("body_poses"),
+        grasp_selector.GetInputPort("body_poses"),
     )
 
     planner = builder.AddSystem(Planner(plant))
@@ -212,13 +189,10 @@ def wire_ports(diagram, plant, visualizer, plan):
         station.GetOutputPort("body_poses"), planner.GetInputPort("body_poses")
     )
     builder.Connect(
-        x_bin_grasp_selector.get_output_port(),
-        planner.GetInputPort("x_bin_grasp"),
+        grasp_selector.get_output_port(),
+        planner.GetInputPort("grasp"),
     )
-    builder.Connect(
-        y_bin_grasp_selector.get_output_port(),
-        planner.GetInputPort("y_bin_grasp"),
-    )
+    
     builder.Connect(
         station.GetOutputPort("wsg_state_measured"),
         planner.GetInputPort("wsg_state"),
@@ -250,7 +224,7 @@ def wire_ports(diagram, plant, visualizer, plan):
     )
 
     # The DiffIK and the direct position-control modes go through a PortSwitch
-    switch = builder.AddSystem(PortSwitch(7))
+    switch = builder.AddSystem(PortSwitch(plant.num_positions()))
     builder.Connect(
         diff_ik.get_output_port(), switch.DeclareInputPort("diff_ik")
     )
@@ -265,3 +239,5 @@ def wire_ports(diagram, plant, visualizer, plan):
         planner.GetOutputPort("control_mode"),
         switch.get_port_selector_input_port(),
     )
+
+    return planner

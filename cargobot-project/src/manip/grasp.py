@@ -28,7 +28,7 @@ from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
 from pydrake.all import RollPitchYaw, AbstractValue, LeafSystem
 
 from segmentation.util import get_merged_masked_pcd
-from scene.WarehouseSceneSystem import make_internal_model
+from scene import WarehouseSceneSystem 
 
 def find_antipodal_grasp(environment_diagram, environment_context, cameras, meshcat, predictions, object_idx: int):
     rng = np.random.default_rng()
@@ -75,12 +75,14 @@ def find_antipodal_grasp(environment_diagram, environment_context, cameras, mesh
     plant.SetFreeBodyPose(plant_context, plant.GetBodyByName("body"), best_X_G)
     diagram.ForcedPublish(context)
 
+def function():
+    return
 
 class GraspSelector(LeafSystem):
-    def __init__(self, plant, bin_instance, camera_body_indices):
+    def __init__(self, plant, bin_instance, camera_body_indices=None):
         LeafSystem.__init__(self)
-        self.DeclareAbstractInputPort("rgb_ims", AbstractValue.Make([np.ndarray()]))
-        self.DeclareAbstractInputPort("depth_ims", AbstractValue.Make([np.ndarray()]))
+        self.DeclareAbstractInputPort("rgb_ims", AbstractValue.Make([np.array([])]))
+        self.DeclareAbstractInputPort("depth_ims", AbstractValue.Make([np.array([])]))
         self.DeclareAbstractInputPort("projection_funcs", AbstractValue.Make([function]))
         self.DeclareAbstractInputPort("X_WCs", AbstractValue.Make([RigidTransform()]))
         #self.DeclareAbstractInputPort("diagram", AbstractValue.Make(Diagram))
@@ -98,10 +100,10 @@ class GraspSelector(LeafSystem):
             self.SelectGrasp,
         )
         port.disable_caching_by_default()
-        """
+        
         # Compute crop box.
         context = plant.CreateDefaultContext()
-        bin_body = plant.GetBodyByName("bin_base", bin_instance)
+        bin_body = plant.GetBodyByName("table_top_link", bin_instance)
         X_B = plant.EvalBodyPoseInWorld(context, bin_body)
         margin = 0.001  # only because simulation is perfect!
         a = X_B.multiply(
@@ -110,9 +112,9 @@ class GraspSelector(LeafSystem):
         b = X_B.multiply([0.22 - 0.1 - margin, 0.29 - 0.025 - margin, 2.0])
         self._crop_lower = np.minimum(a, b)
         self._crop_upper = np.maximum(a, b)
-        """
         
-        self._internal_model, self._internal_plant, self._internal_scene_graph = make_internal_model()
+        
+        self._internal_model, self._internal_plant, self._internal_scene_graph = WarehouseSceneSystem.make_internal_model()
         self._internal_model_context = (
             self._internal_model.CreateDefaultContext()
         )

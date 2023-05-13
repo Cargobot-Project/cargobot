@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 
 from scene.CameraSystem import CameraSystem
 
-def plot_camera_view(camera: CameraSystem, camera_idx: int, output_path: str=None):
-    plt.imshow(camera.rgb_im)
+def plot_camera_view(rgb_ims, camera_idx: int, output_path: str=None):
+    plt.imshow(rgb_ims[camera_idx])
     plt.title(f"View from camera {camera_idx}")
     plt.show()
     if output_path is not None:

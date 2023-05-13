@@ -36,208 +36,205 @@ from manip.grasp import *
 from demos.overwrite import *
 from scene.CameraSystem import *
 
-
-def WarehouseSceneSystem(
-        meshcat,
-        scene_path: str="/usr/cargobot/cargobot-project/res/box_with_cameras.dmd.yaml",
-        name="warehouse_scene_system",
-        add_cameras: bool=True
-        ):
-    builder = DiagramBuilder()
-    box_cnt = 5
-    station = builder.AddSystem(
-        MakeManipulationStation( time_step=0.002, filename=scene_path, box_cnt=box_cnt))
-    
-    plant = station.GetSubsystemByName("plant")
-    scene_graph = station.GetSubsystemByName("scene_graph")
-
-    # Create the physics engine + scene graph.
-    #plant, scene_graph = AddMultibodyPlantSceneGraph(builder, time_step=0.0)
-    
-
-    # Add a visualizer just to help us see the object.
-    use_meshcat = False
-    if use_meshcat:
-        meshcat = builder.AddSystem(MeshcatVisualizer(scene_graph))
-        builder.Connect(scene_graph.get_query_output_port(),
-                        meshcat.get_geometry_query_input_port())
-
+class WarehouseSceneSystem:
+    def __init__(self,
+            segmentation_model,
+            meshcat,
+            scene_path: str="/usr/cargobot/cargobot-project/res/box_with_cameras.dmd.yaml",
+            name="warehouse_scene_system",
+            add_cameras: bool=True
+            ):
+        self.meshcat = meshcat
         
-    """# Add arm
-    robot = station.GetSubsystemByName("iiwa_controller").get_multibody_plant_for_control()
-    
-    # Set up differential inverse kinematics.
-    diff_ik = AddIiwaDifferentialIK(builder, robot)
-    plan = builder.AddSystem(PickAndPlaceTrajectory(plant))
+        self.builder = DiagramBuilder()
+        self.box_cnt = 5
+        self.station = self.builder.AddSystem(MakeManipulationStation( time_step=0.002, filename=scene_path, box_cnt=self.box_cnt))
+        self.plant = self.station.GetSubsystemByName("plant")
+        self.scene_graph = self.station.GetSubsystemByName("scene_graph")
+        self.segmentation_model = segmentation_model
+        
+        use_meshcat = False
+        if use_meshcat:
+            meshcat = builder.AddSystem(MeshcatVisualizer(scene_graph))
+            builder.Connect(scene_graph.get_query_output_port(),
+                            meshcat.get_geometry_query_input_port())
 
-    builder.Connect(diff_ik.get_output_port(),
-                    station.GetInputPort("iiwa_position"))
-    builder.Connect(plan.GetOutputPort("X_WG"),
-                    diff_ik.get_input_port(0))
-    builder.Connect(station.GetOutputPort("iiwa_state_estimated"),
-                    diff_ik.GetInputPort("robot_state"))
 
-    builder.Connect(plan.GetOutputPort("wsg_position"),
-                    station.GetInputPort("wsg_position"))
+        self.to_point_clouds = []
+        self.cameras = []
+        # Adds predefined cameras
+        if add_cameras:
+            print("--> Adding cameras...")
+            for i, X_WC in enumerate(CARGOBOT_CAMERA_POSES):
+                camera = AddRgbdSensor(self.builder, self.scene_graph, X_WC, output_port=self.station.GetOutputPort("query_object"))
+                camera.set_name(f"camera{i}")
+                self.cameras.append(camera)
+                #builder.ExportOutput(camera.label_image_output_port(), f"camera{i}_label_image")
 
-    builder.Connect(station.GetOutputPort("body_poses"),
-                    plan.GetInputPort("body_poses"))
-    
-    builder.Connect(icp.GetOutputPort("X_WO"), plan.GetInputPort("X_WO"))"""
-
-    
-
-    to_point_clouds = list()
-    rgb_ports = list()
-    depth_ports = list()
-
-    # Adds predefined cameras
-    if add_cameras:
-        print("--> Adding cameras...")
-        for i, X_WC in enumerate(CARGOBOT_CAMERA_POSES):
-            camera = AddRgbdSensor(builder, scene_graph, X_WC, output_port=station.GetOutputPort("query_object"))
-            camera.set_name(f"camera{i}")
-            rgb_ports.append(camera.color_image_output_port())
-            depth_ports.append(camera.depth_image_32F_output_port())
-            #builder.ExportOutput(camera.label_image_output_port(), f"camera{i}_label_image")
-
-            to_point_cloud = builder.AddSystem(
-                DepthImageToPointCloud(
-                    camera_info=camera.depth_camera_info(),
-                    fields=BaseField.kXYZs | BaseField.kRGBs,
+                to_point_cloud = self.builder.AddSystem(
+                    DepthImageToPointCloud(
+                        camera_info=camera.depth_camera_info(),
+                        fields=BaseField.kXYZs | BaseField.kRGBs,
+                    )
                 )
+
+                self.builder.Connect(
+                    camera.depth_image_32F_output_port(),
+                    to_point_cloud.depth_image_input_port(),
+                )
+
+                self.builder.Connect(
+                    camera.color_image_output_port(),
+                    to_point_cloud.color_image_input_port(),
+                )
+                
+                self.builder.Connect(
+                    camera.body_pose_in_world_output_port(),
+                    to_point_cloud.camera_pose_input_port()
+                )
+
+                self.to_point_clouds.append(to_point_cloud)
+
+        self.grasp_selector = self.builder.AddSystem(
+            GraspSelector(
+                self.plant,
+                self.plant.GetModelInstanceByName("table_top"),
+                len(self.cameras),
+                self.segmentation_model
             )
-            builder.Connect(
-                camera.depth_image_32F_output_port(),
-                to_point_cloud.depth_image_input_port(),
-            )
-            builder.Connect(
+        )
+        self.planner = self.wire_ports()
+
+        self.visualizer = MeshcatVisualizer.AddToBuilder(
+            self.builder, self.station.GetOutputPort("query_object"), meshcat)
+
+        self.diagram = self.builder.Build()
+        self.diagram.set_name(name)
+        self.context = self.diagram.CreateDefaultContext()
+        gs_context = self.grasp_selector.GetMyContextFromRoot(self.context)
+
+        for i, camera in enumerate(self.cameras):
+            self.grasp_selector.GetInputPort(f"cam_info_{i}").FixValue(gs_context, camera.depth_camera_info())
+
+        self.grasp_selector.GetInputPort("color").FixValue(gs_context, 1)
+
+
+    def project_depth_to_pC(self, depth_pixel):
+        """
+        project depth pixels to points in camera frame
+        using pinhole camera model
+        Input:
+            depth_pixels: numpy array of (nx3) or (3,)
+        Output:
+            pC: 3D point in camera frame, numpy array of (nx3)
+        """
+        # switch u,v due to python convention
+        v = depth_pixel[:,0]
+        u = depth_pixel[:,1]
+        Z = depth_pixel[:,2]
+        cx = self.cam_info.center_x()
+        cy = self.cam_info.center_y()
+        fx = self.cam_info.focal_x()
+        fy = self.cam_info.focal_y()
+        X = (u-cx) * Z/fx
+        Y = (v-cy) * Z/fy
+        pC = np.c_[X,Y,Z]
+        return pC
+
+
+    def wire_ports(self):
+        # Camera bindings
+        for i, camera in enumerate(self.cameras):
+            self.builder.Connect(
                 camera.color_image_output_port(),
-                to_point_cloud.color_image_input_port(),
+                self.grasp_selector.GetInputPort(f"rgb_im_{i}")
             )
             
-            builder.Connect(
-                camera.body_pose_in_world_output_port(),
-                to_point_cloud.camera_pose_input_port()
+            self.builder.Connect(
+                camera.depth_image_32F_output_port(),
+                self.grasp_selector.GetInputPort(f"depth_im_{i}")
             )
 
-            to_point_clouds.append(to_point_cloud.point_cloud_output_port())
+            self.builder.Connect(
+                camera.body_pose_in_world_output_port(),
+                self.grasp_selector.GetInputPort(f"X_WC_{i}")
+            )
+            
+        # Planner and Grasp Selector Bindings
+        planner = self.builder.AddSystem(Planner(self.plant))
+        
+        self.builder.Connect(
+            self.grasp_selector.get_output_port(),
+            planner.GetInputPort("grasp"),
+        )
+        
+        self.builder.Connect(
+            self.station.GetOutputPort("wsg_state_measured"),
+            planner.GetInputPort("wsg_state"),
+        )
+        self.builder.Connect(
+            self.station.GetOutputPort("iiwa_position_measured"),
+            planner.GetInputPort("iiwa_position"),
+        )
 
-    planner = wire_ports(builder, plant, station, to_point_clouds, rgb_ports, depth_ports)
+        robot = self.station.GetSubsystemByName(
+            "iiwa_controller"
+        ).get_multibody_plant_for_control()
 
-    visualizer = MeshcatVisualizer.AddToBuilder(
-        builder, station.GetOutputPort("query_object"), meshcat)
+        # Set up differential inverse kinematics.
+        diff_ik = AddIiwaDifferentialIK(self.builder, robot)
+        self.builder.Connect(planner.GetOutputPort("X_WG"), diff_ik.get_input_port(0))
+        self.builder.Connect(
+            self.station.GetOutputPort("iiwa_state_estimated"),
+            diff_ik.GetInputPort("robot_state"),
+        )
+        self.builder.Connect(
+            planner.GetOutputPort("reset_diff_ik"),
+            diff_ik.GetInputPort("use_robot_state"),
+        )
 
-    diagram = builder.Build()
-    diagram.set_name(name)
-    context = diagram.CreateDefaultContext()
+        self.builder.Connect(
+            planner.GetOutputPort("wsg_position"),
+            self.station.GetInputPort("wsg_position"),
+        )
 
-    return diagram, context, visualizer, planner #, cameras
+        # The DiffIK and the direct position-control modes go through a PortSwitch
+        switch = self.builder.AddSystem(PortSwitch(10))
+        self.builder.Connect(
+            diff_ik.get_output_port(), switch.DeclareInputPort("diff_ik")
+        )
+        self.builder.Connect(
+            planner.GetOutputPort("iiwa_position_command"),
+            switch.DeclareInputPort("position"),
+        )
+        self.builder.Connect(
+            switch.get_output_port(), self.station.GetInputPort("iiwa_position")
+        )
+        self.builder.Connect(
+            planner.GetOutputPort("control_mode"),
+            switch.get_port_selector_input_port(),
+        )
 
 
+        return planner
+    
+    def get_rgb_ims(self):
+        return [self.cameras[i].color_image_output_port().Eval(self.cameras[i].GetMyContextFromRoot(self.context)).data for i in range(len(self.cameras))]
+
+    def get_pC(self):
+        return self.grasp_selector.get_pC(self.context)
+
+    def get_grasp(self):
+        return self.grasp_selector.get_grasp(self.context)
 
 def make_internal_model():
-    """
-    Makes an internal diagram for only the objects we know about, like truck, floor, gripper etc.
-    """
-    builder = DiagramBuilder()
-    plant, scene_graph = AddMultibodyPlantSceneGraph(builder, time_step=0.001)
-    parser = Parser(plant)
-    parser.AddModels("/usr/cargobot/cargobot-project/res/demo_envs/mobilebase_perception_demo.dmd.yaml")
-    plant.Finalize()
-    return builder.Build(), plant, scene_graph
-
-
-def wire_ports( builder, plant, station, to_point_clouds, rgb_ports, depth_ports):
-    grasp_selector = builder.AddSystem(
-        GraspSelector(
-            plant,
-            plant.GetModelInstanceByName("table_top")#,
-            #camera_body_indices=[
-                #plant.GetBodyIndices(plant.GetModelInstanceByName("camera0"))[
-                 #   0
-                #],
-               # plant.GetBodyIndices(plant.GetModelInstanceByName("camera1"))[
-                #    0
-                #],
-            #],
-        )
-    )
-    
-    builder.Connect(
-        rgb_ports[0],
-        grasp_selector.get_input_port(0),
-    )
-
-    builder.Connect(
-        depth_ports[0],
-        grasp_selector.get_input_port(1),
-    )
-    
-    builder.Connect(
-
-        grasp_selector.get_input_port(1)
-    )
-
-    builder.Connect(
-        station.GetOutputPort("body_poses"),
-        grasp_selector.GetInputPort("body_poses"),
-    )
-
-    planner = builder.AddSystem(Planner(plant))
-    builder.Connect(
-        station.GetOutputPort("body_poses"), planner.GetInputPort("body_poses")
-    )
-    builder.Connect(
-        grasp_selector.get_output_port(),
-        planner.GetInputPort("grasp"),
-    )
-    
-    builder.Connect(
-        station.GetOutputPort("wsg_state_measured"),
-        planner.GetInputPort("wsg_state"),
-    )
-    builder.Connect(
-        station.GetOutputPort("iiwa_position_measured"),
-        planner.GetInputPort("iiwa_position"),
-    )
-
-    robot = station.GetSubsystemByName(
-        "iiwa_controller"
-    ).get_multibody_plant_for_control()
-
-    # Set up differential inverse kinematics.
-    diff_ik = AddIiwaDifferentialIK(builder, robot)
-    builder.Connect(planner.GetOutputPort("X_WG"), diff_ik.get_input_port(0))
-    builder.Connect(
-        station.GetOutputPort("iiwa_state_estimated"),
-        diff_ik.GetInputPort("robot_state"),
-    )
-    builder.Connect(
-        planner.GetOutputPort("reset_diff_ik"),
-        diff_ik.GetInputPort("use_robot_state"),
-    )
-
-    builder.Connect(
-        planner.GetOutputPort("wsg_position"),
-        station.GetInputPort("wsg_position"),
-    )
-
-    # The DiffIK and the direct position-control modes go through a PortSwitch
-    switch = builder.AddSystem(PortSwitch(plant.num_positions()))
-    builder.Connect(
-        diff_ik.get_output_port(), switch.DeclareInputPort("diff_ik")
-    )
-    builder.Connect(
-        planner.GetOutputPort("iiwa_position_command"),
-        switch.DeclareInputPort("position"),
-    )
-    builder.Connect(
-        switch.get_output_port(), station.GetInputPort("iiwa_position")
-    )
-    builder.Connect(
-        planner.GetOutputPort("control_mode"),
-        switch.get_port_selector_input_port(),
-    )
-
-    return planner
+        """
+        Makes an internal diagram for only the objects we know about, like truck, floor, gripper etc.
+        """
+        builder = DiagramBuilder()
+        plant, scene_graph = AddMultibodyPlantSceneGraph(builder, time_step=0.001)
+        parser = Parser(plant)
+        parser.AddModels("/usr/cargobot/cargobot-project/res/demo_envs/mobilebase_perception_demo_without_robot.dmd.yaml")
+        parser.AddModels("/usr/cargobot/cargobot-project/res/wsg.sdf")
+        plant.Finalize()
+        return builder.Build(), plant, scene_graph

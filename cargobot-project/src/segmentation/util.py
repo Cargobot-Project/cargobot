@@ -57,15 +57,15 @@ def get_instance_segmentation_model(model_path: str, num_classes: int=cargobot_n
 
     return model
 
-def get_predictions(model, cameras: List[CameraSystem]):
+def get_predictions(model, rgb_ims):
     device = torch.device(
         'cuda') if torch.cuda.is_available() else torch.device('cpu')
-    num_cameras = len(cameras)
+    num_cameras = len(rgb_ims)
     with torch.no_grad():
         predictions = []
-        for camera in cameras:
+        for  rgb_im in rgb_ims:
             predictions.append(
-                model([Tf.to_tensor(camera.rgb_im[:, :, :3]).to(device)]))
+                model([Tf.to_tensor(rgb_im[:, :, :3]).to(device)]))
             
     for i in range(num_cameras):
         for k in predictions[i][0].keys():
@@ -77,7 +77,7 @@ def get_predictions(model, cameras: List[CameraSystem]):
     
     return predictions
 
-def get_merged_masked_pcd(predictions, rgb_ims, depth_ims, project_depth_to_pC_funcs, X_WCs, object_idx: int, mask_threshold=150):
+def get_merged_masked_pcd(predictions, rgb_ims, depth_ims, project_depth_to_pC_func, X_WCs, cam_infos, object_idx: int, mask_threshold=120):
     """
     predictions: The output of the trained network (one for each camera)
     rgb_ims: RGBA images from each camera
@@ -88,8 +88,8 @@ def get_merged_masked_pcd(predictions, rgb_ims, depth_ims, project_depth_to_pC_f
     """
 
     pcd = []
-    for prediction, rgb_im, depth_im, project_depth_to_pC_func, X_WC in \
-            zip(predictions, rgb_ims, depth_ims, project_depth_to_pC_funcs, X_WCs):
+    for prediction, rgb_im, depth_im, X_WC, cam_info in \
+            zip(predictions, rgb_ims, depth_ims, X_WCs, cam_infos):
         # These arrays aren't the same size as the correct outputs, but we're
         # just initializing them to something valid for now.
         spatial_points = np.zeros((3, 1))
@@ -103,7 +103,7 @@ def get_merged_masked_pcd(predictions, rgb_ims, depth_ims, project_depth_to_pC_f
         mask = prediction[0]['masks'][mask_idx, 0]
         mask_uvs = mask >= mask_threshold
         #print(np.sum(mask_uvs))
-
+        print(depth_im.shape)
         img_h, img_w = depth_im.shape
         v_range = np.arange(img_h)
         u_range = np.arange(img_w)
@@ -113,7 +113,7 @@ def get_merged_masked_pcd(predictions, rgb_ims, depth_ims, project_depth_to_pC_f
         depth_pnts = depth_pnts[mask_uvs].reshape([-1, 3])
         
         # point poses in camera frame
-        spatial_points = project_depth_to_pC_func(depth_pnts)
+        spatial_points = project_depth_to_pC_func(cam_info, depth_pnts)
         #spatial_points = X_WC @ spatial_points
 
 

@@ -32,6 +32,9 @@ directives:
     - add_weld: 
         parent: world
         child: false_world
+        X_PC:
+            rotation: !Rpy {deg: [0, 0, 0]}
+            translation: [1, 1, 0]
 
     - add_model:
         name: wsg

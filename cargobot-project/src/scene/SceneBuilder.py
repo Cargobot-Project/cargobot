@@ -9,8 +9,8 @@ from pydrake.all import MakeRenderEngineVtk, RenderEngineVtkParams, DepthRenderC
 from pydrake.all import ModelInstanceIndex, RgbdSensor, DepthImageToPointCloud, BaseField, LeafSystem, AbstractValue
 
 CARGOBOT_CAMERA_POSES = [
-    RigidTransform(RollPitchYaw(np.pi, -np.pi/4,  np.pi / 2.0), [0, -1.5, 1.5]),
-    RigidTransform(RollPitchYaw(-5 * np.pi / 8,  0,  np.pi / 2.0), [0.5, 0, 0.2])    
+    RigidTransform(RollPitchYaw(0, np.pi/2, 0), [-1.3, 0, 0.4]),
+    RigidTransform(RollPitchYaw(0, np.pi/2, 0), [-1.3, 0, 0.4])  
 ]
 
 # Custom version of manipulation library's AddRgbdSensors()

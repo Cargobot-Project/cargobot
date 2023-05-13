@@ -28,39 +28,10 @@ directives:
     - add_model:
         name: iiwa
         file: file:///usr/cargobot/cargobot-project/res/mobile_iiwa.sdf
-        
+    
     - add_weld: 
         parent: world
         child: false_world
-
-    - add_frame:
-        name: camera0_origin
-        X_PF:
-            base_frame: world
-            rotation: !Rpy { deg: [180.0, 45.0, 90.0]}
-            translation: [0, -1.5, 1.5]
-
-    - add_model:
-        name: camera0
-        file: package://manipulation/camera_box.sdf
-
-    - add_weld:
-        parent: camera0_origin
-        child: camera0::base
-    
-    - add_frame:
-        name: camera1_origin
-        X_PF:
-            base_frame: world
-            rotation: !Rpy { deg: [-100.0, 0, 90.0]}
-            translation: [.5, 0., .2]
-
-    - add_model:
-        name: camera1
-        file: package://manipulation/camera_box.sdf
-
-    - add_weld:
-        parent: camera1_origin
-        child: camera1::base
-
-        
+        X_PC:
+            rotation: !Rpy {deg: [0, 0, 0]}
+            translation: [1, 1, 0]

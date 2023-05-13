@@ -53,40 +53,42 @@ print("Loaded segmentation model.\n")
 
 # Set up the environment and cameras
 print("Setting up the environment...")
-environment_diagram, environment_context, visualizer, plan = WarehouseSceneSystem(meshcat, scene_path="/usr/cargobot/cargobot-project/res/demo_envs/mobilebase_perception_demo.dmd.yaml")
 
+wh = WarehouseSceneSystem(model, meshcat, scene_path="/usr/cargobot/cargobot-project/res/demo_envs/mobilebase_perception_demo.dmd.yaml")
+environment_diagram, environment_context, visualizer, plan = wh.diagram, wh.context, wh.visualizer, wh.planner 
 
-cameras = generate_cameras(environment_diagram, environment_context, meshcat)
+#cameras = generate_cameras(environment_diagram, environment_context, meshcat)
 print("Finished setting up the environment.\n")
 
 simulator = Simulator(environment_diagram)
-
+rgb_ims = wh.get_rgb_ims()
 
 # Make prediction from all cameras
 print("Run inference on camera 0...")
 object_idx = 1
-predictions = get_predictions(model, cameras)
+predictions = get_predictions(model, rgb_ims)
 #print("predictions type", type(predictions), type(predictions[0]))
 
-for i, camera in enumerate(cameras):
+for i in range(len(rgb_ims)):
     #print("Camera", i)
-    plot_camera_view(camera, i, f"./out/camera{i}.png")
+    plot_camera_view(rgb_ims, i, f"./out/camera{i}.png")
 
 plot_predictions(predictions, object_idx, f"./out/")
 
-rgb_ims = [c.rgb_im for c in cameras]
+"""rgb_ims = [c.rgb_im for c in cameras]
 depth_ims = [c.depth_im for c in cameras]
 project_depth_to_pC_funcs = [c.project_depth_to_pC for c in cameras]
-X_WCs = [c.X_WC for c in cameras]
+X_WCs = [c.X_WC for c in cameras]"""
 
-pcd = get_merged_masked_pcd(predictions, rgb_ims, depth_ims, project_depth_to_pC_funcs, X_WCs, object_idx)
+pcd = wh.get_pC()
 meshcat.SetObject("masked_cloud", pcd, point_size=0.003)
 print("Finished running inference on camera 0.\n")
 
-# Find grasp pose
-print("Finding optimal grasp pose...")
-find_antipodal_grasp(environment_diagram, environment_context, cameras, meshcat, predictions, object_idx)
+# Find grasp poseprint("Finding optimal grasp pose...")
+grasp_cost, grasp_pose = wh.get_grasp()
 print("Found optimal grasp pose.\n")
+
+print(grasp_cost)
 
 simulator = Simulator(environment_diagram)
 context = simulator.get_context()
@@ -95,7 +97,7 @@ simulator.Initialize()
 
 
 visualizer.StartRecording(False)
-simulator.AdvanceTo(plan.end_time(plan.GetMyContextFromRoot(context)))
+simulator.AdvanceTo(0)
 visualizer.PublishRecording()
 
 while True:

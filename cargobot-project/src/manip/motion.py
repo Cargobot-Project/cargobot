@@ -6,7 +6,8 @@ from pydrake.all import (AbstractValue, AngleAxis, Concatenate, DiagramBuilder,
                          RollPitchYaw, Simulator, StartMeshcat, LoadModelDirectivesFromString, ProcessModelDirectives, 
                          ModelInstanceIndex, PassThrough, Demultiplexer, MultibodyPlant, InverseDynamicsController, 
                          FindResourceOrThrow, RevoluteJoint, Adder, StateInterpolatorWithDiscreteDerivative, 
-                         SchunkWsgPositionController, MakeMultibodyStateToWsgStateSystem, DifferentialInverseKinematicsParameters, DifferentialInverseKinematicsIntegrator)
+                         SchunkWsgPositionController, MakeMultibodyStateToWsgStateSystem, DifferentialInverseKinematicsParameters, DifferentialInverseKinematicsIntegrator,
+                         PortSwitch)
 
 from manipulation import running_as_notebook
 from manipulation.icp import IterativeClosestPoint
@@ -40,9 +41,9 @@ class Planner(LeafSystem):
     def __init__(self, plant):
         LeafSystem.__init__(self)
         self._gripper_body_index = plant.GetBodyByName("body").index()
-        self.DeclareAbstractInputPort(
+        """self.DeclareAbstractInputPort(
             "body_poses", AbstractValue.Make([RigidTransform()])
-        )
+        )"""
         
         self._x_bin_grasp_index = self.DeclareAbstractInputPort(
             "grasp", AbstractValue.Make((np.inf, RigidTransform()))
@@ -84,7 +85,7 @@ class Planner(LeafSystem):
         self.DeclareVectorOutputPort("wsg_position", 1, self.CalcWsgPosition)
 
         # For GoHome mode.
-        num_positions = len(plant.GetPositions())
+        num_positions = 10
         self._iiwa_position_index = self.DeclareVectorInputPort(
             "iiwa_position", num_positions
         ).get_index()

@@ -76,7 +76,7 @@ def MakeManipulationStation(model_directives=None,
     if prefinalize_callback:
         prefinalize_callback(plant)
     
-    generate_boxes(plant, parser, box_cnt)
+    generate_boxes(plant, parser, 1)
     plant.Finalize()
 
     for i in range(plant.num_model_instances()):

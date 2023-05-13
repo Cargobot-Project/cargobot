@@ -1,0 +1,17 @@
+<div>
+    <div>
+        <form method="post" action="{% url 'process_box_size' %}">
+            {% csrf_token %}
+            {% for box in box_container %}
+            <label for="box_height_{{ box.id }}">Enter box {{ box.id }}'s height</label>
+            <input type="number" name="box_height_{{ box.id }}" id="box_height_{{ box.id }}">
+            <label for="box_height_{{ box.id }}">Enter box {{ box.id }}'s width</label>
+            <input type="number" name="box_width_{{ box.id }}" id="box_width_{{ box.id }}">
+            <label for="box_height_{{ box.id }}">Enter box {{ box.id }}'s depth</label>
+            <input type="number" name="box_depth_{{ box.id }}" id="box_depth_{{ box.id }}">
+            <br>
+            {% endfor %}
+            <button type="submit">Set labels to boxes</button>
+        </form>
+    </div>
+</div>

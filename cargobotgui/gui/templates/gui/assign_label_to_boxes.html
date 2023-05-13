@@ -1,0 +1,15 @@
+<form method="post">
+    {% csrf_token %}
+    {% for box in box_container %}
+      <label for="{{ box.id }}">Box {{ box.id }}</label>
+      <select name="box{{ box.id }}_label" id="{{ box.id }}">
+        <option value="">Select Label</option>
+        {% for label in label_container %}
+          <option value="{{ label.name }}">{{ label.name }}</option>
+        {% endfor %}
+      </select>
+      <br>
+    {% endfor %}
+    <button type="submit">Assign Labels</button>
+  </form>
+  

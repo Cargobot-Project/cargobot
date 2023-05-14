@@ -33,7 +33,7 @@ from scene.CameraSystem import CameraSystem, generate_cameras
 from segmentation.util import get_instance_segmentation_model, get_predictions, get_merged_masked_pcd
 from manip.grasp import find_antipodal_grasp
 from segmentation.plot import plot_camera_view, plot_predictions
-
+import pydot
 from pydrake.all import Simulator, RandomGenerator
 
 # Fix RNGs
@@ -56,7 +56,7 @@ print("Setting up the environment...")
 
 wh = WarehouseSceneSystem(model, meshcat, scene_path="/usr/cargobot/cargobot-project/res/demo_envs/mobilebase_perception_demo.dmd.yaml")
 environment_diagram, environment_context, visualizer, plan = wh.diagram, wh.context, wh.visualizer, wh.planner 
-
+print(wh.grasp_selector.GetInputPort("cam_info_0").HasValue(wh.grasp_selector.GetMyMutableContextFromRoot(environment_context)))
 #cameras = generate_cameras(environment_diagram, environment_context, meshcat)
 print("Finished setting up the environment.\n")
 
@@ -95,9 +95,10 @@ context = simulator.get_context()
 
 simulator.Initialize()
 
-
+graph = pydot.graph_from_dot_data(environment_diagram.GetGraphvizString())[0]
+graph.write_jpg("system_output.jpg")
 visualizer.StartRecording(False)
-simulator.AdvanceTo(0)
+simulator.AdvanceTo(1)
 visualizer.PublishRecording()
 
 while True:

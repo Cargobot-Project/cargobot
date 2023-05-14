@@ -118,6 +118,7 @@ print(context)
 simulator.AdvanceTo(12.0)
 visualizer.StopRecording()
 visualizer.PublishRecording()
-
+graph = pydot.graph_from_dot_data(diagram.GetGraphvizString())[0]
+graph.write_jpg("trajopt_output.jpg")
 while True:
     continue

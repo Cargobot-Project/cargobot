@@ -143,15 +143,18 @@ class GraspSelector(LeafSystem):
             
         for i in range(self.camera_num):
             X_WCs.append(self.GetInputPort(f"X_WC_{i}").Eval(context))
-
+        
         for i in range(self.camera_num):
+            print(self.GetInputPort(f"cam_info_{i}").HasValue(context))
             cam_infos.append(self.GetInputPort(f"cam_info_{i}").Eval(context))
+
+        object_idx = self.GetInputPort("color").Eval(context)
 
         diagram = self._internal_model
         plant = self._internal_plant
         scene_graph = self._internal_scene_graph
         self._internal_context = diagram.CreateDefaultContext()
-        object_idx = self.GetInputPort("color").Eval(context)
+        
 
         cloud = get_merged_masked_pcd(
             predictions, rgb_ims, depth_ims, project_depth_to_pC, X_WCs, cam_infos, object_idx)

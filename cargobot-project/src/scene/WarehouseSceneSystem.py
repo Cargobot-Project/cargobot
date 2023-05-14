@@ -103,6 +103,7 @@ class WarehouseSceneSystem:
                 self.segmentation_model
             )
         )
+       
         self.planner = self.wire_ports()
 
         self.visualizer = MeshcatVisualizer.AddToBuilder(
@@ -111,11 +112,11 @@ class WarehouseSceneSystem:
         self.diagram = self.builder.Build()
         self.diagram.set_name(name)
         self.context = self.diagram.CreateDefaultContext()
-        gs_context = self.grasp_selector.GetMyContextFromRoot(self.context)
-
+        gs_context = self.grasp_selector.GetMyMutableContextFromRoot(self.context)
+        
         for i, camera in enumerate(self.cameras):
             self.grasp_selector.GetInputPort(f"cam_info_{i}").FixValue(gs_context, camera.depth_camera_info())
-
+            
         self.grasp_selector.GetInputPort("color").FixValue(gs_context, 1)
 
 
@@ -214,8 +215,7 @@ class WarehouseSceneSystem:
             planner.GetOutputPort("control_mode"),
             switch.get_port_selector_input_port(),
         )
-
-
+        
         return planner
     
     def get_rgb_ims(self):

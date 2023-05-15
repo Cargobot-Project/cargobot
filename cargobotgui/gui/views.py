@@ -1,9 +1,10 @@
 from django.shortcuts import render,redirect
 from django.http import HttpResponse
 from django.template import loader
-status = "NOT_WORKING"
-progress = "0%"
-config = "UNDONE"
+from enum import Enum
+status = "NOT_WORKING" #task durumu 
+progress = "0%" # task runlandıktan sonraki process
+config = "UNDONE" #kutu ve label secimi boolean valuesu
 box_container = []
 number_of_boxes = 0
 label_container = []
@@ -25,10 +26,75 @@ class Box:
     def __str__(self):
         return "Box {} height={} width={} depth={} label={}".format(self.id,self.height,self.width,self.depth,self.label)
         
+class BoxColorEnum(Enum):
+    RED = 0
+    GREEN = 1
+    BLUE = 2
+    MAGENTA = 3
+    YELLOW = 4
+    CYAN = 5
+
+class LabelEnum(Enum):
+    LOW_PRIORITY = 0
+    HIGH_PRIORITY = 1
+    LIGHT = 2
+    HEAVY = 3
+    MID_PRIORITY = 4
+
+def match_enums(label):
+    weight = None
+    priority = None
+    color = None
+    if label.weight == 'light':
+        weight = LabelEnum.LIGHT
+    if label.weight == 'heavy':
+        weight = LabelEnum.HEAVY
+    if label.priority == 'low':
+        priority = LabelEnum.LOW_PRIORITY
+    if label.priority == 'medium':
+        priority = LabelEnum.MID_PRIORITY
+    if label.priority == 'high':
+        priority = LabelEnum.HEAVY
+    if label.name == 'red':
+        color = BoxColorEnum.RED
+    elif label.name == 'green':
+        color = BoxColorEnum.GREEN
+    elif label.name == 'blue':
+        color = BoxColorEnum.BLUE
+    elif label.name == 'cyan':
+        color = BoxColorEnum.CYAN
+    elif label.name == 'magenta':
+        color = BoxColorEnum.MAGENTA
+    elif label.name == 'yellow':
+        color = BoxColorEnum.YELLOW
+    
+    return (weight,priority,color)
+
+
 
 def construct_labels(labels=[Label('red'),Label('green'),Label('blue'),Label('cyan'),Label('magenta'),Label('yellow')]):
     global label_container
     label_container = labels
+
+def box_tuple_adaptor():
+    global box_container
+    global label_container
+    adapted_boxes = []
+    weight = None
+    priority = None
+    color = None
+    for box in box_container:
+        matched_enums = match_enums(box.label)
+        weight = matched_enums[0]
+        priority = matched_enums[1]
+        color = matched_enums[2]
+        adapted_boxes.append({
+            "id":box.id,
+            "dimensions":(box.height,box.width,box.depth),
+            "labels":(weight,priority),
+            "color":(color)
+        })
+    return adapted_boxes
 
 
 def modify_status(code):
@@ -152,8 +218,11 @@ def assign_label_to_boxes(request):
             label_name = request.POST.get('box{}_label'.format(box.id))
             for label in label_container:
                 if label.name == label_name:
-                    box.label = label
+                    box.label = label    
     return redirect('index')
+
+
+
         
 
 

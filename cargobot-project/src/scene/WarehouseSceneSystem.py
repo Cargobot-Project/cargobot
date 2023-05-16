@@ -104,7 +104,7 @@ class WarehouseSceneSystem:
                 self.plant.GetModelInstanceByName("table_top"),
                 len(self.cameras),
                 self.segmentation_model,
-                self.meshcat
+                meshcat=self.meshcat
             )
         )
 

@@ -31,7 +31,7 @@ from segmentation.util import *
 from scene import WarehouseSceneSystem 
 from segmentation.plot import *
 
-def find_antipodal_grasp(environment_diagram, environment_context, cameras, meshcat, predictions, object_idx: int):
+def find_antipodal_grasp(environment_diagram, environment_context, cameras, predictions, object_idx: int, meshcat=None):
     rng = np.random.default_rng()
 
     # Another diagram for the objects the robot "knows about": gripper, cameras, bins.  Think of this as the model in the robot's head.
@@ -80,7 +80,7 @@ def function():
     return
 
 class GraspSelector(LeafSystem):
-    def __init__(self, plant, bin_instance, camera_num, model, meshcat):
+    def __init__(self, plant, bin_instance, camera_num, model, meshcat=None):
         LeafSystem.__init__(self)
         for i in range(camera_num):
             self.DeclareAbstractInputPort(f"rgb_im_{i}", AbstractValue.Make(Image(1,1)))
@@ -159,7 +159,7 @@ class GraspSelector(LeafSystem):
         
 
         cloud = get_merged_masked_pcd(
-            predictions, rgb_ims, depth_ims, self.project_depth_to_pC, X_WCs, cam_infos, object_idx, self.meshcat)
+            predictions, rgb_ims, depth_ims, self.project_depth_to_pC, X_WCs, cam_infos, object_idx, meshcat=self.meshcat)
         
         min_cost = np.inf
         best_X_G = None

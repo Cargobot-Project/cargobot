@@ -26,6 +26,7 @@ from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
 from manipulation.meshcat_utils import AddMeshcatTriad
 from scene.CameraSystem import cargobot_num_cameras, CameraSystem
+from segmentation.plot import add_meshcat_triad
 
 cargobot_num_classes = 6 # TBD
 
@@ -77,7 +78,23 @@ def get_predictions(model, rgb_ims):
     
     return predictions
 
-def get_merged_masked_pcd(predictions, rgb_ims, depth_ims, project_depth_to_pC_func, X_WCs, cam_infos, object_idx: int, mask_threshold=50, meshcat=None):
+def vis_normals(normals, meshcat):
+    normals = normals.T
+    print("-----> normal shape:", normals.shape)
+    for i in range(len(normals)):
+        name = f'normal_vec_{i}'
+        add_meshcat_triad(meshcat, name, length=0.01,
+                        radius=0.001, X_PT=RigidTransform(normals[i]))
+    
+    """
+    while True:
+        print("sleeep")
+        time.sleep(1)
+    """
+        
+DEFAULT_MASK_THRESHOLD = 100
+
+def get_merged_masked_pcd(predictions, rgb_ims, depth_ims, project_depth_to_pC_func, X_WCs, cam_infos, object_idx: int, meshcat=None, mask_threshold=DEFAULT_MASK_THRESHOLD):
     """
     predictions: The output of the trained network (one for each camera)
     rgb_ims: RGBA images from each camera
@@ -162,7 +179,10 @@ def get_merged_masked_pcd(predictions, rgb_ims, depth_ims, project_depth_to_pC_f
         # Estimate normals
         pcd[-1].EstimateNormals(radius=0.1, num_closest=30)
         normals = pcd[-1].normals()
-        vis_normals(normals, meshcat)
+        
+        if meshcat is not None:
+            vis_normals(normals, meshcat)
+
         # Flip normals toward camera
         pcd[-1].FlipNormalsTowardPoint(X_WC.translation())
     
@@ -173,9 +193,3 @@ def get_merged_masked_pcd(predictions, rgb_ims, depth_ims, project_depth_to_pC_f
     # Voxelize down-sample.  (Note that the normals still look reasonable)
     return merged_pcd.Crop(lower_xyz=crop_min, upper_xyz=crop_max)
     #return merged_pcd.VoxelizedDownSample(voxel_size=0.005)
-
-def vis_normals( normals, meshcat):
-    for i in range(len(normals)):
-        name = 'normal_vec_{}'.format(i)
-        AddMeshcatTriad(meshcat, name, length=0.01,
-                        radius=0.001, X_PT=normals[i])

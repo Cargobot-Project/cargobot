@@ -25,13 +25,3 @@ directives:
         parent: table_top_center
         child: table_top_link
 
-    - add_model:
-        name: iiwa
-        file: file:///usr/cargobot/cargobot-project/res/mobile_iiwa.sdf
-    
-    - add_weld: 
-        parent: world
-        child: false_world
-        X_PC:
-            rotation: !Rpy {deg: [0, 0, 0]}
-            translation: [1, 1, 0]

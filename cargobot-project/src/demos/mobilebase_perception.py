@@ -97,7 +97,7 @@ simulator.Initialize()
 graph = pydot.graph_from_dot_data(environment_diagram.GetGraphvizString())[0]
 graph.write_jpg("system_output.jpg")
 visualizer.StartRecording(False)
-simulator.AdvanceTo(2)
+simulator.AdvanceTo(10)
 visualizer.PublishRecording()
 
 while True:

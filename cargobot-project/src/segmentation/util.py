@@ -80,11 +80,11 @@ def get_predictions(model, rgb_ims):
 
 def vis_normals(normals, meshcat):
     normals = normals.T
-    print("-----> normal shape:", normals.shape)
-    for i in range(len(normals)):
+    #print("-----> normal shape:", normals.shape)
+    for i in range(int(len(normals))):
         name = f'normal_vec_{i}'
-        add_meshcat_triad(meshcat, name, length=0.01,
-                        radius=0.001, X_PT=RigidTransform(normals[i]))
+        add_meshcat_triad(meshcat, name, length=0.1,
+                        radius=0.01, X_PT=RigidTransform(normals[i]))
     
     """
     while True:
@@ -109,6 +109,7 @@ def get_merged_masked_pcd(predictions, rgb_ims, depth_ims, project_depth_to_pC_f
     crop_max = RigidTransform().multiply(np.array([6, 6, 0.55]))
     for prediction, rgb_im, depth_im, X_WC, cam_info in \
             zip(predictions, rgb_ims, depth_ims, X_WCs, cam_infos):
+
         # These arrays aren't the same size as the correct outputs, but we're
         # just initializing them to something valid for now.
         spatial_points = np.zeros((3, 1))
@@ -171,25 +172,21 @@ def get_merged_masked_pcd(predictions, rgb_ims, depth_ims, project_depth_to_pC_f
             0] == 3, "RGB points is the wrong size -- should be 3 x N"
         assert rgb_points.shape[1] == spatial_points.shape[1]
         #print("spatial points shape", spatial_points.shape)
-        N = spatial_points.shape[1]
         
+        N = spatial_points.shape[1]
         pcd.append(PointCloud(N, Fields(BaseField.kXYZs | BaseField.kRGBs)))
         pcd[-1].mutable_xyzs()[:] = spatial_points
         pcd[-1].mutable_rgbs()[:] = rgb_points
-        # Estimate normals
         pcd[-1].EstimateNormals(radius=0.1, num_closest=30)
-        normals = pcd[-1].normals()
-        
-        if meshcat is not None:
-            vis_normals(normals, meshcat)
-
-        # Flip normals toward camera
         pcd[-1].FlipNormalsTowardPoint(X_WC.translation())
-    
+        normals = pcd[-1].normals()
+        #if meshcat is not None:
+            #vis_normals(normals, meshcat)
     # Merge point clouds.
     merged_pcd = Concatenate(pcd)
     #print("merged pcd size", merged_pcd.size())
     #print("merged pcd", merged_pcd.xyzs())
     # Voxelize down-sample.  (Note that the normals still look reasonable)
-    return merged_pcd.Crop(lower_xyz=crop_min, upper_xyz=crop_max)
+    merged_cropped_pcd = merged_pcd.Crop(lower_xyz=crop_min, upper_xyz=crop_max)
+    return merged_cropped_pcd
     #return merged_pcd.VoxelizedDownSample(voxel_size=0.005)

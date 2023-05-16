@@ -13,7 +13,7 @@ CARGOBOT_CAMERA_POSES = [
     #RigidTransform(RollPitchYaw(0, np.pi/2, 0), [-1.3, 0, 1.3])  
     RigidTransform(RollPitchYaw(np.pi, -1.10714872,  np.pi / 2.0), [0, -2, 1]),
     RigidTransform(RollPitchYaw(np.pi, 1.10714872,  np.pi / 2.0), [0, 2, 1]),
-    RigidTransform(RollPitchYaw(np.pi, 0,  np.pi / 2.0), [0, 0, 1])
+    #RigidTransform(RollPitchYaw(np.pi, 0,  np.pi / 2.0), [0, 0, 1])
 ]
 
 # Custom version of manipulation library's AddRgbdSensors()

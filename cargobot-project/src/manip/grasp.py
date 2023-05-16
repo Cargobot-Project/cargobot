@@ -29,6 +29,7 @@ from pydrake.all import RollPitchYaw, AbstractValue, LeafSystem, Image, PixelTyp
 
 from segmentation.util import *
 from scene import WarehouseSceneSystem 
+from segmentation.plot import *
 
 def find_antipodal_grasp(environment_diagram, environment_context, cameras, meshcat, predictions, object_idx: int):
     rng = np.random.default_rng()
@@ -57,7 +58,7 @@ def find_antipodal_grasp(environment_diagram, environment_context, cameras, mesh
     X_WCs = [c.X_WC for c in cameras]
 
     cloud = get_merged_masked_pcd(
-        predictions, rgb_ims, depth_ims, project_depth_to_pC_funcs, X_WCs, object_idx)
+        predictions, rgb_ims, depth_ims, project_depth_to_pC_funcs, X_WCs, object_idx, meshcat=meshcat)
 
     plant_context = plant.GetMyContextFromRoot(context)
     scene_graph_context = scene_graph.GetMyContextFromRoot(context)
@@ -79,14 +80,15 @@ def function():
     return
 
 class GraspSelector(LeafSystem):
-    def __init__(self, plant, bin_instance, camera_num, model):
+    def __init__(self, plant, bin_instance, camera_num, model, meshcat):
         LeafSystem.__init__(self)
         for i in range(camera_num):
             self.DeclareAbstractInputPort(f"rgb_im_{i}", AbstractValue.Make(Image(1,1)))
             self.DeclareAbstractInputPort(f"depth_im_{i}", AbstractValue.Make(Image[PixelType.kDepth32F](1,1)))
             self.DeclareAbstractInputPort(f"X_WC_{i}", AbstractValue.Make(RigidTransform()))
             self.DeclareAbstractInputPort(f"cam_info_{i}", AbstractValue.Make(CameraInfo(10,10,np.pi/4)))
-
+        self.cam_contexts = []
+        self.meshcat = meshcat
         self.DeclareAbstractInputPort("color", AbstractValue.Make(int))
         #self.DeclareAbstractInputPort("diagram", AbstractValue.Make(Diagram))
         #self.DeclareAbstractInputPort("cloud", AbstractValue.Make(PointCloud()))
@@ -121,6 +123,7 @@ class GraspSelector(LeafSystem):
         self._rng = np.random.default_rng()
         self.camera_num = camera_num
         self.model = model
+       
 
     def SelectGrasp(self, context, output: AbstractValue):
         rgb_ims = []
@@ -145,11 +148,10 @@ class GraspSelector(LeafSystem):
             X_WCs.append(self.GetInputPort(f"X_WC_{i}").Eval(context))
         
         for i in range(self.camera_num):
-            print(self.GetInputPort(f"cam_info_{i}").HasValue(context))
             cam_infos.append(self.GetInputPort(f"cam_info_{i}").Eval(context))
 
         object_idx = self.GetInputPort("color").Eval(context)
-
+        
         diagram = self._internal_model
         plant = self._internal_plant
         scene_graph = self._internal_scene_graph
@@ -157,8 +159,8 @@ class GraspSelector(LeafSystem):
         
 
         cloud = get_merged_masked_pcd(
-            predictions, rgb_ims, depth_ims, project_depth_to_pC, X_WCs, cam_infos, object_idx)
-
+            predictions, rgb_ims, depth_ims, self.project_depth_to_pC, X_WCs, cam_infos, object_idx, self.meshcat)
+        
         min_cost = np.inf
         best_X_G = None
         
@@ -170,6 +172,11 @@ class GraspSelector(LeafSystem):
         
         output.set_value((min_cost, best_X_G))
         
+    def set_cam_contexts(self, cam_contexts):
+        self.cam_contexts = cam_contexts
+
+    def set_context(self, context):
+        self.own_context = context
 
     def project_depth_to_pC(self, cam_info, depth_pixel):
             """
@@ -210,7 +217,7 @@ class GraspSelector(LeafSystem):
             depth_ims.append(depth_im)
             X_WCs.append(self.GetInputPort(f"X_WC_{i}").Eval(context))
             cam_infos.append(self.GetInputPort(f"cam_info_{i}").Eval(context))
-
+        
         predictions = get_predictions(self.model, rgb_ims)
 
         diagram = self._internal_model
@@ -219,8 +226,7 @@ class GraspSelector(LeafSystem):
 
         object_idx = self.GetInputPort("color").Eval(context)
 
-        cloud = get_merged_masked_pcd(
-            predictions, rgb_ims, depth_ims, self.project_depth_to_pC, X_WCs, cam_infos, object_idx)
+        cloud = get_merged_masked_pcd(predictions, rgb_ims, depth_ims, self.project_depth_to_pC, X_WCs, cam_infos, object_idx, meshcat=self.meshcat)
 
         return cloud
 

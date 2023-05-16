@@ -35,6 +35,7 @@ from manip.motion import *
 from manip.grasp import *
 from demos.overwrite import *
 from scene.CameraSystem import *
+from manip.enums import *
 
 class WarehouseSceneSystem:
     def __init__(self,
@@ -50,6 +51,7 @@ class WarehouseSceneSystem:
         self.box_cnt = 5
         self.station = self.builder.AddSystem(MakeManipulationStation( time_step=0.002, filename=scene_path, box_cnt=self.box_cnt))
         self.plant = self.station.GetSubsystemByName("plant")
+        self.plant_context = self.plant.GetMyMutableContextFromRoot(self.station.CreateDefaultContext())
         self.scene_graph = self.station.GetSubsystemByName("scene_graph")
         self.segmentation_model = segmentation_model
         
@@ -68,6 +70,7 @@ class WarehouseSceneSystem:
             for i, X_WC in enumerate(CARGOBOT_CAMERA_POSES):
                 camera = AddRgbdSensor(self.builder, self.scene_graph, X_WC, output_port=self.station.GetOutputPort("query_object"))
                 camera.set_name(f"camera{i}")
+                AddMeshcatTriad(meshcat, f"initial{i}", X_PT=X_WC)
                 self.cameras.append(camera)
                 #builder.ExportOutput(camera.label_image_output_port(), f"camera{i}_label_image")
 
@@ -85,7 +88,7 @@ class WarehouseSceneSystem:
 
                 self.builder.Connect(
                     camera.color_image_output_port(),
-                    to_point_cloud.color_image_input_port(),
+                    to_point_cloud.color_image_input_port()
                 )
                 
                 self.builder.Connect(
@@ -100,10 +103,11 @@ class WarehouseSceneSystem:
                 self.plant,
                 self.plant.GetModelInstanceByName("table_top"),
                 len(self.cameras),
-                self.segmentation_model
+                self.segmentation_model,
+                self.meshcat
             )
         )
-       
+
         self.planner = self.wire_ports()
 
         self.visualizer = MeshcatVisualizer.AddToBuilder(
@@ -118,6 +122,8 @@ class WarehouseSceneSystem:
             self.grasp_selector.GetInputPort(f"cam_info_{i}").FixValue(gs_context, camera.depth_camera_info())
             
         self.grasp_selector.GetInputPort("color").FixValue(gs_context, 1)
+        #self.grasp_selector.set_cam_contexts([self.cameras[i].GetMyMutableContextFromRoot(self.context) for i in range(len(self.cameras))])
+        self.grasp_selector.set_context( gs_context)
 
 
     def project_depth_to_pC(self, depth_pixel):
@@ -160,15 +166,20 @@ class WarehouseSceneSystem:
                 camera.body_pose_in_world_output_port(),
                 self.grasp_selector.GetInputPort(f"X_WC_{i}")
             )
-            
+        
         # Planner and Grasp Selector Bindings
-        planner = self.builder.AddSystem(Planner(self.plant))
+        box_list = [{"id": 1, "dimensions": (0.1, 0.1, 0.2), "labels": (LabelEnum.HIGH_PRIORTY, LabelEnum.HEAVY), "color": BoxColorEnum.BLUE}]
+        planner = self.builder.AddSystem(Planner(self.plant, box_list=box_list))
         
         self.builder.Connect(
             self.grasp_selector.get_output_port(),
             planner.GetInputPort("grasp"),
         )
-        
+        # we only use wsg's pose :3
+        self.builder.Connect(
+            self.station.GetOutputPort("body_poses"),
+            planner.GetInputPort("body_poses")
+        )
         self.builder.Connect(
             self.station.GetOutputPort("wsg_state_measured"),
             planner.GetInputPort("wsg_state"),
@@ -235,6 +246,6 @@ def make_internal_model():
         plant, scene_graph = AddMultibodyPlantSceneGraph(builder, time_step=0.001)
         parser = Parser(plant)
         parser.AddModels("/usr/cargobot/cargobot-project/res/demo_envs/mobilebase_perception_demo_without_robot.dmd.yaml")
-        parser.AddModels("/usr/cargobot/cargobot-project/res/wsg.sdf")
+        parser.AddModels("/usr/cargobot/cargobot-project/res/demo_envs/wsg_fixed.sdf")
         plant.Finalize()
         return builder.Build(), plant, scene_graph

@@ -30,29 +30,23 @@ from copy import copy
 
 from pydrake.all import InputPortIndex
 
-class PlannerState(Enum):
-    WAIT_FOR_OBJECTS_TO_SETTLE = 1
-    PICKING_BOX = 2
-    EMPTY_TRUCK = 3
-    GO_HOME = 4
-
+from manip.enums import *
 
 class Planner(LeafSystem):
-    def __init__(self, plant):
+    def __init__(self, plant, box_list):
         LeafSystem.__init__(self)
-        self._gripper_body_index = plant.GetBodyByName("body").index()
-        """self.DeclareAbstractInputPort(
+        self.box_list = box_list
+        self.truck_box_list = []
+        self.DeclareAbstractInputPort(
             "body_poses", AbstractValue.Make([RigidTransform()])
-        )"""
+        )
+        self._gripper_body_index = plant.GetBodyByName("body").index()
+        
         
         self._x_bin_grasp_index = self.DeclareAbstractInputPort(
             "grasp", AbstractValue.Make((np.inf, RigidTransform()))
         ).get_index()
         
-        """self._y_bin_grasp_index = self.DeclareAbstractInputPort(
-            "y_bin_grasp", AbstractValue.Make((np.inf, RigidTransform()))
-        ).get_index()
-        """
         self._pickup_grasp_index = self.DeclareAbstractInputPort(
             "pickup_grasp", AbstractValue.Make((np.inf, RigidTransform()))
         ).get_index()
@@ -111,6 +105,56 @@ class Planner(LeafSystem):
         self.DeclarePeriodicUnrestrictedUpdateEvent(0.1, 0.0, self.Update)
 
         self.rng = np.random.default_rng(135)
+        
+        self.DeclareAbstractOutputPort("color", lambda: AbstractValue.Make(BoxColorEnum.RED), self.CalcColor )
+
+    def CalcColor(self, context, output):
+        if not self.box_list.empty():
+            for box in self.box_list:
+                if LabelEnum.LOW_PRIORTY in box["labels"] and LabelEnum.HEAVY in box["labels"]:
+                    output.set_value(box["color"])
+                    placed_box = self.box_list.pop(box_list.index(box))
+                    self.truck_box_list.append(placed_box)
+                    return
+
+            for box in self.box_list:    
+                if LabelEnum.LOW_PRIORTY in box["labels"] and LabelEnum.LIGHT in box["labels"]:
+                    output.set_value(box["color"])
+                    placed_box = self.box_list.pop(box_list.index(box))
+                    self.truck_box_list.append(placed_box)
+                    return
+
+            for box in self.box_list:    
+                if LabelEnum.MID_PRIORTY in box["labels"] and LabelEnum.HEAVY in box["labels"]:
+                    output.set_value(box["color"])
+                    placed_box = self.box_list.pop(box_list.index(box))
+                    self.truck_box_list.append(placed_box)
+                    return
+
+            for box in self.box_list:    
+                if LabelEnum.MID_PRIORTY in box["labels"] and LabelEnum.LIGHT in box["labels"]:
+                    output.set_value(box["color"])
+                    placed_box = self.box_list.pop(box_list.index(box))
+                    self.truck_box_list.append(placed_box)
+                    return
+
+            for box in self.box_list:    
+                if LabelEnum.HIGH_PRIORTY in box["labels"] and LabelEnum.HEAVY in box["labels"]:
+                    output.set_value(box["color"])
+                    placed_box = self.box_list.pop(box_list.index(box))
+                    self.truck_box_list.append(placed_box)
+                    return
+
+            for box in self.box_list:    
+                if LabelEnum.HIGH_PRIORTY in box["labels"] and LabelEnum.LIGHT in box["labels"]:
+                    output.set_value(box["color"])
+                    placed_box = self.box_list.pop(box_list.index(box))
+                    self.truck_box_list.append(placed_box)
+                    return
+            return
+        else:
+            return
+        
 
     def Update(self, context, state):
         mode = context.get_abstract_state(int(self._mode_index)).get_value()
@@ -168,7 +212,7 @@ class Planner(LeafSystem):
                 state.get_mutable_abstract_state(
                     int(self._times_index)
                 ).set_value(times)
-                X_G = self.get_input_port(0).Eval(context)[
+                X_G = self.get_input_port(0).Eval(context)[ #TODO
                     int(self._gripper_body_index)
                 ]
                 state.get_mutable_abstract_state(
@@ -187,7 +231,7 @@ class Planner(LeafSystem):
             self.Plan(context, state)
             return
 
-        X_G = self.get_input_port(0).Eval(context)[
+        X_G = self.get_input_port(0).Eval(context)[ #TODO
             int(self._gripper_body_index)
         ]
         # if current_time > 10 and current_time < 12:
@@ -229,7 +273,7 @@ class Planner(LeafSystem):
         )
 
         X_G = {
-            "initial": self.get_input_port(0).Eval(context)[
+            "initial": self.get_input_port(0).Eval(context)[ #TODO
                 int(self._gripper_body_index)
             ]
         }
@@ -237,15 +281,14 @@ class Planner(LeafSystem):
         cost = np.inf
         for i in range(5):
             if mode == PlannerState.EMPTY_TRUCK:
-                cost, X_G["pick"] = self.get_input_port(
-                    self._truck_grasp_index
-                ).Eval(context)
+                #cost, X_G["pick"] = self.get_input_port(
+                 #   self._truck_grasp_index
+                #).Eval(context)
+                cost, X_G["pick"] = self.GetInputPort("grasp").Eval(context)
                 if np.isinf(cost):
                     mode = PlannerState.PICKING_BOX
             else:
-                cost, X_G["pick"] = self.get_input_port(
-                    self._pickup_grasp_index
-                ).Eval(context)
+                cost, X_G["pick"] = self.GetInputPort("grasp").Eval(context)
                 if np.isinf(cost):
                     mode = PlannerState.EMPTY_TRUCK
                 else:
@@ -282,8 +325,8 @@ class Planner(LeafSystem):
             times
         )
 
-        if False:  # Useful for debugging
-            AddMeshcatTriad(meshcat, "X_Oinitial", X_PT=X_O["initial"])
+        if False:  
+            AddMeshcatTriad(meshcat, "<initial", X_PT=["initial"])
             AddMeshcatTriad(meshcat, "X_Gprepick", X_PT=X_G["prepick"])
             AddMeshcatTriad(meshcat, "X_Gpick", X_PT=X_G["pick"])
             AddMeshcatTriad(meshcat, "X_Gplace", X_PT=X_G["place"])
@@ -332,7 +375,7 @@ class Planner(LeafSystem):
 
         # Command the current position (note: this is not particularly good if the velocity is non-zero)
         output.set_value(
-            self.get_input_port(0).Eval(context)[int(self._gripper_body_index)]
+            self.get_input_port(0).Eval(context)[int(self._gripper_body_index)] # TODO
         )
 
     def CalcWsgPosition(self, context, output):
@@ -416,14 +459,15 @@ class PickAndPlaceTrajectory(LeafSystem):
                 [int(self._gripper_body_index)]
         }
         X_O = {
-            "initial": self.get_input_port(1).Eval(context),
-            "goal": RigidTransform([0, -.6, 0])
+            #"initial": self.get_input_port(1).Eval(context), 
+            "goal": RigidTransform([0, -.6, 0]) #TODO use if else to decide which color goes to which part of the truck grid
         }
         X_GgraspO = RigidTransform(RollPitchYaw(np.pi / 2, np.pi / 2, 0), [0, 0.07, 0])
         X_OGgrasp = X_GgraspO.inverse()
-        X_G["pick"] = X_O["initial"] @ X_OGgrasp
+        #X_G["pick"] = X_O["initial"] @ X_OGgrasp
+        X_G["pick"] = self.GetInputPort("grasp").Eval(context)
         X_G["place"] = X_O["goal"] @ X_OGgrasp
-        X_G, times = MakeGripperFrames(X_G) # TODO: this takes a t0 argument, maybe it delays?
+        X_G, times = MakeGripperFrames(X_G) 
         print(f"Planned {times['postplace']} second trajectory.")
 
         if False:  # Useful for debugging

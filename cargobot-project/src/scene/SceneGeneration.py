@@ -163,7 +163,7 @@ def generate_boxes( plant, parser, num_of_boxes=None, list_of_boxes=None):
     for i in range(num_of_boxes):
         color = 1
         box_rotation = [np.pi/2*np.random.randint(4), np.pi/2*np.random.randint(4), np.pi/2*np.random.randint(4)]
-        box_position = [0.2*int(box_positions[i][0])-0.15, 0.2*int(box_positions[i][2])-0.15, 0.1]
+        box_position = [0.2*int(box_positions[i][0]), 0.2*int(box_positions[i][2]), 0.1]
         box = BoxObjectString(color, .1, .1, .2, 1, "", box_position, box_rotation)
         sdf = box.generate_sdf_string(f"box{i}")
         instance = parser.AddModelsFromString(sdf, "sdf")

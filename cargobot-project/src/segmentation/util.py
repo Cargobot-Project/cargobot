@@ -24,7 +24,7 @@ from pydrake.systems.framework import DiagramBuilder
 from torchvision.models.detection import MaskRCNN_ResNet50_FPN_Weights
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
-
+from manipulation.meshcat_utils import AddMeshcatTriad
 from scene.CameraSystem import cargobot_num_cameras, CameraSystem
 
 cargobot_num_classes = 6 # TBD
@@ -77,7 +77,7 @@ def get_predictions(model, rgb_ims):
     
     return predictions
 
-def get_merged_masked_pcd(predictions, rgb_ims, depth_ims, project_depth_to_pC_func, X_WCs, cam_infos, object_idx: int, mask_threshold=120):
+def get_merged_masked_pcd(predictions, rgb_ims, depth_ims, project_depth_to_pC_func, X_WCs, cam_infos, object_idx: int, mask_threshold=50, meshcat=None):
     """
     predictions: The output of the trained network (one for each camera)
     rgb_ims: RGBA images from each camera
@@ -88,6 +88,8 @@ def get_merged_masked_pcd(predictions, rgb_ims, depth_ims, project_depth_to_pC_f
     """
 
     pcd = []
+    crop_min = RigidTransform().multiply(np.array([-6, -6, 0.05]))
+    crop_max = RigidTransform().multiply(np.array([6, 6, 0.55]))
     for prediction, rgb_im, depth_im, X_WC, cam_info in \
             zip(predictions, rgb_ims, depth_ims, X_WCs, cam_infos):
         # These arrays aren't the same size as the correct outputs, but we're
@@ -103,7 +105,7 @@ def get_merged_masked_pcd(predictions, rgb_ims, depth_ims, project_depth_to_pC_f
         mask = prediction[0]['masks'][mask_idx, 0]
         mask_uvs = mask >= mask_threshold
         #print(np.sum(mask_uvs))
-        print(depth_im.shape)
+        #print(depth_im.shape)
         img_h, img_w = depth_im.shape
         v_range = np.arange(img_h)
         u_range = np.arange(img_w)
@@ -153,11 +155,14 @@ def get_merged_masked_pcd(predictions, rgb_ims, depth_ims, project_depth_to_pC_f
         assert rgb_points.shape[1] == spatial_points.shape[1]
         #print("spatial points shape", spatial_points.shape)
         N = spatial_points.shape[1]
+        
         pcd.append(PointCloud(N, Fields(BaseField.kXYZs | BaseField.kRGBs)))
         pcd[-1].mutable_xyzs()[:] = spatial_points
         pcd[-1].mutable_rgbs()[:] = rgb_points
         # Estimate normals
         pcd[-1].EstimateNormals(radius=0.1, num_closest=30)
+        normals = pcd[-1].normals()
+        vis_normals(normals, meshcat)
         # Flip normals toward camera
         pcd[-1].FlipNormalsTowardPoint(X_WC.translation())
     
@@ -166,5 +171,11 @@ def get_merged_masked_pcd(predictions, rgb_ims, depth_ims, project_depth_to_pC_f
     #print("merged pcd size", merged_pcd.size())
     #print("merged pcd", merged_pcd.xyzs())
     # Voxelize down-sample.  (Note that the normals still look reasonable)
-    #return merged_pcd
-    return merged_pcd.VoxelizedDownSample(voxel_size=0.005)
+    return merged_pcd.Crop(lower_xyz=crop_min, upper_xyz=crop_max)
+    #return merged_pcd.VoxelizedDownSample(voxel_size=0.005)
+
+def vis_normals( normals, meshcat):
+    for i in range(len(normals)):
+        name = 'normal_vec_{}'.format(i)
+        AddMeshcatTriad(meshcat, name, length=0.01,
+                        radius=0.001, X_PT=normals[i])

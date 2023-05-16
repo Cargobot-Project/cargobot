@@ -56,11 +56,9 @@ print("Setting up the environment...")
 
 wh = WarehouseSceneSystem(model, meshcat, scene_path="/usr/cargobot/cargobot-project/res/demo_envs/mobilebase_perception_demo.dmd.yaml")
 environment_diagram, environment_context, visualizer, plan = wh.diagram, wh.context, wh.visualizer, wh.planner 
-print(wh.grasp_selector.GetInputPort("cam_info_0").HasValue(wh.grasp_selector.GetMyMutableContextFromRoot(environment_context)))
 #cameras = generate_cameras(environment_diagram, environment_context, meshcat)
 print("Finished setting up the environment.\n")
 
-simulator = Simulator(environment_diagram)
 rgb_ims = wh.get_rgb_ims()
 
 # Make prediction from all cameras
@@ -88,9 +86,10 @@ print("Finished running inference on camera 0.\n")
 grasp_cost, grasp_pose = wh.get_grasp()
 print("Found optimal grasp pose.\n")
 
-print(grasp_cost)
+print( "Grasp pose: ", grasp_pose)
+print( "Grasp cost: ", grasp_cost)
 
-simulator = Simulator(environment_diagram)
+simulator = Simulator(environment_diagram, environment_context)
 context = simulator.get_context()
 
 simulator.Initialize()
@@ -98,7 +97,7 @@ simulator.Initialize()
 graph = pydot.graph_from_dot_data(environment_diagram.GetGraphvizString())[0]
 graph.write_jpg("system_output.jpg")
 visualizer.StartRecording(False)
-simulator.AdvanceTo(1)
+simulator.AdvanceTo(2)
 visualizer.PublishRecording()
 
 while True:

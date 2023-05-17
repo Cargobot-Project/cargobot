@@ -59,7 +59,7 @@ environment_diagram, environment_context, visualizer, plan = wh.diagram, wh.cont
 #cameras = generate_cameras(environment_diagram, environment_context, meshcat)
 print("Finished setting up the environment.\n")
 
-rgb_ims = wh.get_rgb_ims()
+"""rgb_ims = wh.get_rgb_ims()
 
 # Make prediction from all cameras
 print("Run inference on camera 0...")
@@ -71,14 +71,14 @@ for i in range(len(rgb_ims)):
     #print("Camera", i)
     plot_camera_view(rgb_ims, i, f"./out/camera{i}.png")
 
-plot_predictions(predictions, object_idx, f"./out/")
+plot_predictions(predictions, object_idx, f"./out/")"""
 
 """rgb_ims = [c.rgb_im for c in cameras]
 depth_ims = [c.depth_im for c in cameras]
 project_depth_to_pC_funcs = [c.project_depth_to_pC for c in cameras]
 X_WCs = [c.X_WC for c in cameras]"""
 
-pcd = wh.get_pC()
+"""pcd = wh.get_pC()
 meshcat.SetObject("masked_cloud", pcd, point_size=0.003)
 print("Finished running inference on camera 0.\n")
 
@@ -87,7 +87,7 @@ grasp_cost, grasp_pose = wh.get_grasp()
 print("Found optimal grasp pose.\n")
 
 print( "Grasp pose: ", grasp_pose)
-print( "Grasp cost: ", grasp_cost)
+print( "Grasp cost: ", grasp_cost)"""
 
 simulator = Simulator(environment_diagram, environment_context)
 context = simulator.get_context()
@@ -97,7 +97,7 @@ simulator.Initialize()
 graph = pydot.graph_from_dot_data(environment_diagram.GetGraphvizString())[0]
 graph.write_jpg("system_output.jpg")
 visualizer.StartRecording(False)
-simulator.AdvanceTo(10)
+simulator.AdvanceTo(30)
 visualizer.PublishRecording()
 
 while True:

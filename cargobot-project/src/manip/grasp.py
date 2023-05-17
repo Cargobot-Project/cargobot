@@ -170,7 +170,7 @@ def GenerateAntipodalGraspCandidate(
     Gz = np.cross(Gx, Gy)
     R_WG = RotationMatrix(np.vstack((Gx, Gy, Gz)).T)
     #p_GS_G = [0.054 - 0.01, 0.10625, 0]
-    p_GS_G = [0.1, 0.10625, 0]
+    p_GS_G = [0.054,  0.1, 0.01]
 
     # Try orientations from the center out
     min_roll = -np.pi / 3.0

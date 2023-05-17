@@ -17,8 +17,7 @@ from manipulation.meshcat_utils import AddMeshcatTriad
 from manipulation.mustard_depth_camera_example import MustardPointCloud
 from manipulation.pick import (MakeGripperCommandTrajectory, MakeGripperFrames,
                                MakeGripperPoseTrajectory)
-from manipulation.scenarios import (AddIiwaDifferentialIK,
-                                    MakeManipulationStation, AddIiwa, AddWsg)
+from manipulation.scenarios import (AddWsg)
 
 from pydrake.multibody.plant import AddMultibodyPlantSceneGraph
 from pydrake.multibody.parsing import Parser

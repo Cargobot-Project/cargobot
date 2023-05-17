@@ -98,7 +98,7 @@ class BoxObjectString():
                     </material>
                     </visual>
                     <collision name="collision">
-                      <pose>0 0 0 0 0 0</pose>
+                      <pose>""" + f"{self.position[0]} {self.position[1]} {self.position[2]} " + f"{self.rotation[0]} {self.rotation[1]} {self.rotation[2]}" +"""</pose>
                       <geometry>
                         <box> 
                           <size>"""+ str(self.w) + """ """ + str(self.d) + """ """ + str(self.h) + """</size>

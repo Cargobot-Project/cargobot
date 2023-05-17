@@ -14,8 +14,6 @@ from manipulation.meshcat_utils import AddMeshcatTriad
 from manipulation.mustard_depth_camera_example import MustardPointCloud
 from manipulation.pick import (MakeGripperCommandTrajectory, MakeGripperFrames,
                                MakeGripperPoseTrajectory)
-from manipulation.scenarios import (AddIiwaDifferentialIK,
-                                    AddIiwa, AddWsg)
 
 from pydrake.multibody.plant import AddMultibodyPlantSceneGraph
 from pydrake.multibody.parsing import Parser
@@ -168,7 +166,7 @@ class WarehouseSceneSystem:
             )
         
         # Planner and Grasp Selector Bindings
-        box_list = [{"id": 1, "dimensions": (0.1, 0.1, 0.2), "labels": (LabelEnum.HIGH_PRIORTY, LabelEnum.HEAVY), "color": BoxColorEnum.BLUE}]
+        box_list = [{"id": 1, "dimensions": (0.05, 0.05, 0.1), "labels": (LabelEnum.HIGH_PRIORTY, LabelEnum.HEAVY), "color": BoxColorEnum.BLUE}]
         planner = self.builder.AddSystem(Planner(self.plant, box_list=box_list))
         
         self.builder.Connect(

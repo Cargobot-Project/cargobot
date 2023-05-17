@@ -27,9 +27,7 @@ from IPython.display import HTML, SVG, display
 import pydot
 from enum import Enum
 from copy import copy
-
 from pydrake.all import InputPortIndex
-
 from manip.enums import *
 
 class Planner(LeafSystem):
@@ -101,11 +99,8 @@ class Planner(LeafSystem):
             "iiwa_position_command", num_positions, self.CalcIiwaPosition
         )
         self.DeclareInitializationDiscreteUpdateEvent(self.Initialize)
-
         self.DeclarePeriodicUnrestrictedUpdateEvent(0.1, 0.0, self.Update)
-
         self.rng = np.random.default_rng(135)
-        
         self.DeclareAbstractOutputPort("color", lambda: AbstractValue.Make(BoxColorEnum.RED), self.CalcColor )
 
     def CalcColor(self, context, output):
@@ -234,16 +229,15 @@ class Planner(LeafSystem):
         X_G = self.get_input_port(0).Eval(context)[ #TODO
             int(self._gripper_body_index)
         ]
-        # if current_time > 10 and current_time < 12:
-        #    self.GoHome(context, state)
-        #    return
+       
         if (
             np.linalg.norm(
                 traj_X_G.GetPose(current_time).translation()
                 - X_G.translation()
             )
-            > 0.2
+            > 10
         ):
+            print("------->Current time: ", current_time)
             # If my trajectory tracking has gone this wrong, then I'd better
             # stop and replan.  TODO(russt): Go home, in joint coordinates,
             # instead.
@@ -288,6 +282,7 @@ class Planner(LeafSystem):
                 if np.isinf(cost):
                     mode = PlannerState.PICKING_BOX
             else:
+                print("---------->X_G", self.GetInputPort("grasp").Eval(context))
                 cost, X_G["pick"] = self.GetInputPort("grasp").Eval(context)
                 if np.isinf(cost):
                     mode = PlannerState.EMPTY_TRUCK
@@ -326,11 +321,11 @@ class Planner(LeafSystem):
         )
 
         if False:  
-            AddMeshcatTriad(meshcat, "<initial", X_PT=["initial"])
+            AddMeshcatTriad(meshcat, "initial", X_PT=["initial"])
             AddMeshcatTriad(meshcat, "X_Gprepick", X_PT=X_G["prepick"])
             AddMeshcatTriad(meshcat, "X_Gpick", X_PT=X_G["pick"])
             AddMeshcatTriad(meshcat, "X_Gplace", X_PT=X_G["place"])
-
+        
         traj_X_G = MakeGripperPoseTrajectory(X_G, times)
         traj_wsg_command = MakeGripperCommandTrajectory(times)
 
@@ -428,7 +423,6 @@ class Planner(LeafSystem):
         traj_q = context.get_mutable_abstract_state(
             int(self._traj_q_index)
         ).get_value()
-
         output.SetFromVector(traj_q.value(context.get_time()))
 
 

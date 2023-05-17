@@ -15,7 +15,7 @@ directives:
         X_PF:
             base_frame: world
             rotation: !Rpy { deg: [0, 0, 0]}
-            translation: [0, 0, -0.5]
+            translation: [0, 0, -0.025]
 
     - add_model:
         name: table_top
@@ -34,7 +34,7 @@ directives:
         child: false_world
         X_PC:
             rotation: !Rpy {deg: [0, 0, 0]}
-            translation: [1, 1, 0]
+            translation: [0, 0, 0]
 
     - add_model:
         name: wsg

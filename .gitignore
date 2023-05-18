@@ -139,3 +139,4 @@ cargobot-project/segmentation/results.json
 cargobot-project/res/seg/*.pt
 cargobot-project/src/demos/out
 cargobot-project/src/demos/system_output.jpg
+cargobot-project/src/demos/system_output.jpg

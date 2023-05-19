@@ -297,6 +297,7 @@ class Planner(LeafSystem):
         ), "Could not find a valid grasp in either bin after 5 attempts"
         state.get_mutable_abstract_state(int(self._mode_index)).set_value(mode)
 
+
         # TODO(russt): The randomness should come in through a random input
         # port.
         if mode == PlannerState.PICKING_BOX:

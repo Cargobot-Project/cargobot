@@ -75,8 +75,8 @@ def GraspCandidateCost(
     p_GC = X_GW @ cloud.xyzs()
 
     # Crop to a region inside of the finger box.
-    crop_min = [-0.05, 0.1, -0.00625]
-    crop_max = [0.05, 0.1125, 0.00625]
+    crop_min = [-3, -3, -0.00625]
+    crop_max = [3, 3, 0.00625]
     indices = np.all(
         (
             crop_min[0] <= p_GC[0, :],

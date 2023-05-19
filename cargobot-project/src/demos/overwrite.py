@@ -9,7 +9,7 @@ from pydrake.all import (AbstractValue, AngleAxis, Concatenate, DiagramBuilder,
                          FindResourceOrThrow, RevoluteJoint, Adder, StateInterpolatorWithDiscreteDerivative, 
                          SchunkWsgPositionController, MakeMultibodyStateToWsgStateSystem, DifferentialInverseKinematicsParameters, 
                          DifferentialInverseKinematicsIntegrator, RgbdSensor,DepthRenderCamera,RenderCameraCore,CameraInfo,
-                         ClippingRange,DepthRange)
+                         ClippingRange,DepthRange, PrismaticJoint)
 
 from manipulation import running_as_notebook
 from manipulation.icp import IterativeClosestPoint
@@ -75,8 +75,9 @@ def MakeManipulationStation(model_directives=None,
     if prefinalize_callback:
         prefinalize_callback(plant)
     
-    generate_boxes(plant, parser, 1)
+    boxes = generate_boxes(plant, parser, box_cnt)
     plant.Finalize()
+    
 
     for i in range(plant.num_model_instances()):
         model_instance = ModelInstanceIndex(i)
@@ -203,6 +204,7 @@ def MakeManipulationStation(model_directives=None,
     builder.ExportOutput(plant.get_body_poses_output_port(), "body_poses")
     
     diagram = builder.Build()
+   
     diagram.set_name("ManipulationStation")
     return diagram
 
@@ -212,6 +214,7 @@ def AddIiwaDifferentialIK(builder, plant, frame=None):
                                                      plant.num_velocities())
     time_step = plant.time_step()
     q0 = plant.GetPositions(plant.CreateDefaultContext())
+    
     params.set_nominal_joint_position(q0)
     params.set_end_effector_angular_speed_limit(2)
     params.set_end_effector_translational_velocity_limits([-2, -2, -2],

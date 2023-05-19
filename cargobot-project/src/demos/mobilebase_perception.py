@@ -36,6 +36,7 @@ from segmentation.plot import plot_camera_view, plot_predictions
 import pydot
 from pydrake.all import Simulator, RandomGenerator
 
+
 # Fix RNGs
 rng = np.random.default_rng(135)  # this is for python
 generator = RandomGenerator(rng.integers(0, 1000))  # this is for c++
@@ -56,6 +57,7 @@ print("Setting up the environment...")
 
 wh = WarehouseSceneSystem(model, meshcat, scene_path="/usr/cargobot/cargobot-project/res/demo_envs/mobilebase_perception_demo.dmd.yaml")
 environment_diagram, environment_context, visualizer, plan = wh.diagram, wh.context, wh.visualizer, wh.planner 
+#AddIiwaCollision(wh.plant)
 #cameras = generate_cameras(environment_diagram, environment_context, meshcat)
 print("Finished setting up the environment.\n")
 
@@ -71,14 +73,9 @@ for i in range(len(rgb_ims)):
     #print("Camera", i)
     plot_camera_view(rgb_ims, i, f"./out/camera{i}.png")
 
-plot_predictions(predictions, object_idx, f"./out/")"""
+plot_predictions(predictions, object_idx, f"./out/")
 
-"""rgb_ims = [c.rgb_im for c in cameras]
-depth_ims = [c.depth_im for c in cameras]
-project_depth_to_pC_funcs = [c.project_depth_to_pC for c in cameras]
-X_WCs = [c.X_WC for c in cameras]"""
-
-"""pcd = wh.get_pC()
+pcd = wh.get_pC()
 meshcat.SetObject("masked_cloud", pcd, point_size=0.003)
 print("Finished running inference on camera 0.\n")
 
@@ -92,13 +89,36 @@ print( "Grasp cost: ", grasp_cost)"""
 simulator = Simulator(environment_diagram, environment_context)
 context = simulator.get_context()
 
+dimension = 6
+num_of_boxes = 5
+grid = [f"{x},{y}" for x in range(dimension) for y in range(dimension)]
+box_positions = np.random.choice(grid, replace=False, size=num_of_boxes)
+plant_context = wh.plant.GetMyMutableContextFromRoot(context)
+z=0.1
+i = 0
+for body_index in wh.plant.GetFloatingBaseBodies():
+    tf = RigidTransform(
+        RotationMatrix(),
+        [0.1*(int(box_positions[i].split(",")[0])-dimension/2)+0.7, 0.1*(int(box_positions[i].split(",")[1])-dimension/2)-0.1, z]
+    )
+    print(tf)
+    wh.plant.SetFreeBodyPose(plant_context, wh.plant.get_body(body_index), tf)
+    i += 1
 simulator.Initialize()
-
+pcd = wh.get_pC()
+meshcat.SetObject("masked_cloud", pcd, point_size=0.003)
+print("Finished running inference on camera 0.\n")
 graph = pydot.graph_from_dot_data(environment_diagram.GetGraphvizString())[0]
 graph.write_jpg("system_output.jpg")
-visualizer.StartRecording(False)
-simulator.AdvanceTo(30)
+
+
+simulator.AdvanceTo(0.1)
+meshcat.Flush()  # Wait for the large object meshes to get to meshcat.
+visualizer.StartRecording(True)
+meshcat.AddButton("Stop Simulation", "Escape")
+while simulator.get_context().get_time() < 4000 and meshcat.GetButtonClicks("Stop Simulation") < 1:
+    simulator.AdvanceTo(simulator.get_context().get_time() + 2.0)
 visualizer.PublishRecording()
 
-while True:
+while 1:
     time.sleep(1)

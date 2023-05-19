@@ -151,21 +151,14 @@ def generate_scene(number_of_times):
 
 
 def generate_boxes( plant, parser, num_of_boxes=None, list_of_boxes=None):
-    rs = np.random.RandomState()  # this is for python
-    generator = RandomGenerator(rs.randint(1000))  # this is for c+
-   
-    instance_id_to_class_name = dict()
-
-    dimension = 6
-    grid = [f"{x},{y}" for x in range(dimension) for y in range(dimension)]
-    box_positions = np.random.choice(grid, replace=False, size=num_of_boxes)
-    box_positions = ["0,0"]
+    instances = []
+    color = np.random.choice([0,1,2,3,4], replace=False, size=num_of_boxes)
     for i in range(num_of_boxes):
-        color = 1
-        box_rotation = [np.pi/2*np.random.randint(4), np.pi/2*np.random.randint(4), np.pi/2*np.random.randint(4)]
-        box_position = [0.2*int(box_positions[i][0]), 0.2*int(box_positions[i][2]), 0.1]
-        box = BoxObjectString(color, .1, .1, .2, 1, "", box_position, box_rotation)
+        """box_rotation = [np.pi/2*np.random.randint(4), np.pi/2*np.random.randint(4), np.pi/2*np.random.randint(4)]
+        box_position = [2*int(box_positions[i][0]), int(box_positions[i][2]), 0.05]"""
+        box = BoxObjectString(color[i], .1, .1, .2, 1, "", [0,0,0], [0,0,0])
         sdf = box.generate_sdf_string(f"box{i}")
         instance = parser.AddModelsFromString(sdf, "sdf")
-        
+        instances.append(instance)
+    return instances
     

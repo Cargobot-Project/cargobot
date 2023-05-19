@@ -11,7 +11,7 @@
     <div>
         <form action="{% url 'set_box_amount' %}" method="get">
             {% csrf_token %}
-            <button type="submit">SET LABELS</button>
+            <button type="submit">Create Boxes</button>
         </form>
     </div>
     {% elif config == "DONE" %}

@@ -94,7 +94,7 @@ def vis_normals(normals, meshcat):
         
 DEFAULT_MASK_THRESHOLD = 100
 
-def get_merged_masked_pcd(predictions, rgb_ims, depth_ims, project_depth_to_pC_func, X_WCs, cam_infos, object_idx: int, meshcat=None, mask_threshold=DEFAULT_MASK_THRESHOLD):
+def get_merged_masked_pcd(predictions, rgb_ims, depth_ims, project_depth_to_pC_func, X_WCs, cam_infos, object_idx: int, meshcat=None, mask_threshold=DEFAULT_MASK_THRESHOLD, score_threshold=0.5):
     """
     predictions: The output of the trained network (one for each camera)
     rgb_ims: RGBA images from each camera
@@ -107,6 +107,8 @@ def get_merged_masked_pcd(predictions, rgb_ims, depth_ims, project_depth_to_pC_f
     pcd = []
     crop_min = RigidTransform().multiply(np.array([-6, -6, 0.05]))
     crop_max = RigidTransform().multiply(np.array([6, 6, 0.55]))
+    avg = 0
+    i = 0
     for prediction, rgb_im, depth_im, X_WC, cam_info in \
             zip(predictions, rgb_ims, depth_ims, X_WCs, cam_infos):
 
@@ -118,8 +120,9 @@ def get_merged_masked_pcd(predictions, rgb_ims, depth_ims, project_depth_to_pC_f
         ######################################
         # Your code here (populate spatial_points and rgb_points)
         ######################################
-
+        i += 1
         mask_idx = np.argmax(prediction[0]['labels'] == object_idx)
+        avg += prediction[0]["scores"][mask_idx] 
         mask = prediction[0]['masks'][mask_idx, 0]
         mask_uvs = mask >= mask_threshold
         #print(np.sum(mask_uvs))
@@ -183,6 +186,11 @@ def get_merged_masked_pcd(predictions, rgb_ims, depth_ims, project_depth_to_pC_f
         #if meshcat is not None:
             #vis_normals(normals, meshcat)
     # Merge point clouds.
+    avg = avg/i
+    print(avg)
+    if avg <= score_threshold:
+        return None
+    
     merged_pcd = Concatenate(pcd)
     #print("merged pcd size", merged_pcd.size())
     #print("merged pcd", merged_pcd.xyzs())

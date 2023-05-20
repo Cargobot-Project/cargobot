@@ -221,7 +221,7 @@ def find_antipodal_grasp(environment_diagram, environment_context, cameras, pred
     #print("=============depth im type", type(depth_ims[0]))
     project_depth_to_pC_funcs = [c.project_depth_to_pC for c in cameras]
     X_WCs = [c.X_WC for c in cameras]
-
+    
     cloud = get_merged_masked_pcd(
         predictions, rgb_ims, depth_ims, project_depth_to_pC_funcs, X_WCs, object_idx, meshcat=meshcat)
 
@@ -326,8 +326,13 @@ class GraspSelector(LeafSystem):
         cloud = get_merged_masked_pcd(
             predictions, rgb_ims, depth_ims, self.project_depth_to_pC, X_WCs, cam_infos, object_idx, meshcat=self.meshcat)
         
+        #print(predictions)
         min_cost = np.inf
         best_X_G = None
+        
+        if cloud is None:
+            output.set_value((min_cost, best_X_G))
+            return
         
         for i in range(100):
             cost, X_G = GenerateAntipodalGraspCandidate(diagram, self._internal_context, cloud, self._rng)
@@ -392,7 +397,6 @@ class GraspSelector(LeafSystem):
         object_idx = self.GetInputPort("color").Eval(context)
 
         cloud = get_merged_masked_pcd(predictions, rgb_ims, depth_ims, self.project_depth_to_pC, X_WCs, cam_infos, object_idx, meshcat=self.meshcat)
-
         return cloud
 
     def get_grasp(self, outer_context):

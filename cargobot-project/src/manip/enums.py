@@ -3,7 +3,7 @@ from enum import Enum
 class PlannerState(Enum):
     WAIT_FOR_OBJECTS_TO_SETTLE = 1
     PICKING_BOX = 2
-    EMPTY_TRUCK = 3
+    SHUFFLE_BOXES = 3
     GO_HOME = 4
 
 class BoxColorEnum(Enum):

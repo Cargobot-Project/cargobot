@@ -119,7 +119,6 @@ class WarehouseSceneSystem:
         for i, camera in enumerate(self.cameras):
             self.grasp_selector.GetInputPort(f"cam_info_{i}").FixValue(gs_context, camera.depth_camera_info())
             
-        self.grasp_selector.GetInputPort("color").FixValue(gs_context, 1)
         #self.grasp_selector.set_cam_contexts([self.cameras[i].GetMyMutableContextFromRoot(self.context) for i in range(len(self.cameras))])
         self.grasp_selector.set_context( gs_context)
 
@@ -168,7 +167,12 @@ class WarehouseSceneSystem:
         # Planner and Grasp Selector Bindings
         box_list = [{"id": 1, "dimensions": (0.05, 0.05, 0.1), "labels": (LabelEnum.HIGH_PRIORTY, LabelEnum.HEAVY), "color": BoxColorEnum.BLUE}]
         planner = self.builder.AddSystem(Planner(self.plant, box_list=box_list))
-        
+
+        self.builder.Connect(
+            planner.GetOutputPort("color"),
+            self.grasp_selector.GetInputPort("color")
+        )
+
         self.builder.Connect(
             self.grasp_selector.get_output_port(),
             planner.GetInputPort("grasp"),

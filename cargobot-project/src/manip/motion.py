@@ -101,54 +101,82 @@ class Planner(LeafSystem):
         self.DeclareInitializationDiscreteUpdateEvent(self.Initialize)
         self.DeclarePeriodicUnrestrictedUpdateEvent(0.1, 0.0, self.Update)
         self.rng = np.random.default_rng(135)
-        self.DeclareAbstractOutputPort("color", lambda: AbstractValue.Make(BoxColorEnum.RED), self.CalcColor )
+        self.DeclareAbstractOutputPort("color", lambda: AbstractValue.Make(BoxColorEnum.RED), self.CalcColor, prerequisites_of_calc=set([self.xc_ticket()]))
+        self.properties = (LabelEnum.LOW_PRIORTY, LabelEnum.HEAVY) # default
+        self.color = BoxColorEnum.RED # default
+        self.output_color = BoxColorEnum.RED # default
+
+    def CalcGraspColor(self):
+        color_list = np.array([BoxColorEnum.RED,BoxColorEnum.BLUE,BoxColorEnum.GREEN,BoxColorEnum.MAGENTA,BoxColorEnum.CYAN, BoxColorEnum.YELLOW])
+        choice = self.output_color
+        while choice != self.output_color:
+            choice = np.random.choice(color_list, replace=False, size=1)
+        self.color = choice
+
 
     def CalcColor(self, context, output):
-        if not self.box_list.empty():
-            for box in self.box_list:
-                if LabelEnum.LOW_PRIORTY in box["labels"] and LabelEnum.HEAVY in box["labels"]:
-                    output.set_value(box["color"])
-                    placed_box = self.box_list.pop(box_list.index(box))
-                    self.truck_box_list.append(placed_box)
-                    return
+        mode = context.get_abstract_state(int(self._mode_index)).get_value()
+        if mode == PlannerState.WAIT_FOR_OBJECTS_TO_SETTLE or mode == PlannerState.PICKING_BOX:
+            if self.box_list:
+                for box in self.box_list:
+                    if LabelEnum.LOW_PRIORTY in box["labels"] and LabelEnum.HEAVY in box["labels"]:
+                        output.set_value(box["color"])
+                        self.output_color = box["color"]
+                        placed_box = self.box_list.pop(self.box_list.index(box))
+                        self.truck_box_list.append(placed_box)
+                        self.properties = box["labels"]
+                        return
 
-            for box in self.box_list:    
-                if LabelEnum.LOW_PRIORTY in box["labels"] and LabelEnum.LIGHT in box["labels"]:
-                    output.set_value(box["color"])
-                    placed_box = self.box_list.pop(box_list.index(box))
-                    self.truck_box_list.append(placed_box)
-                    return
+                for box in self.box_list:    
+                    if LabelEnum.LOW_PRIORTY in box["labels"] and LabelEnum.LIGHT in box["labels"]:
+                        output.set_value(box["color"])
+                        self.output_color = box["color"]
+                        placed_box = self.box_list.pop(self.box_list.index(box))
+                        self.truck_box_list.append(placed_box)
+                        self.properties = box["labels"]
+                        return
 
-            for box in self.box_list:    
-                if LabelEnum.MID_PRIORTY in box["labels"] and LabelEnum.HEAVY in box["labels"]:
-                    output.set_value(box["color"])
-                    placed_box = self.box_list.pop(box_list.index(box))
-                    self.truck_box_list.append(placed_box)
-                    return
+                for box in self.box_list:    
+                    if LabelEnum.MID_PRIORTY in box["labels"] and LabelEnum.HEAVY in box["labels"]:
+                        output.set_value(box["color"])
+                        self.output_color = box["color"]
+                        placed_box = self.box_list.pop(self.box_list.index(box))
+                        self.truck_box_list.append(placed_box)
+                        self.properties = box["labels"]
+                        return
 
-            for box in self.box_list:    
-                if LabelEnum.MID_PRIORTY in box["labels"] and LabelEnum.LIGHT in box["labels"]:
-                    output.set_value(box["color"])
-                    placed_box = self.box_list.pop(box_list.index(box))
-                    self.truck_box_list.append(placed_box)
-                    return
+                for box in self.box_list:    
+                    if LabelEnum.MID_PRIORTY in box["labels"] and LabelEnum.LIGHT in box["labels"]:
+                        output.set_value(box["color"])
+                        self.output_color = box["color"]
+                        placed_box = self.box_list.pop(self.box_list.index(box))
+                        self.truck_box_list.append(placed_box)
+                        self.properties = box["labels"]
+                        return
 
-            for box in self.box_list:    
-                if LabelEnum.HIGH_PRIORTY in box["labels"] and LabelEnum.HEAVY in box["labels"]:
-                    output.set_value(box["color"])
-                    placed_box = self.box_list.pop(box_list.index(box))
-                    self.truck_box_list.append(placed_box)
-                    return
+                for box in self.box_list:    
+                    if LabelEnum.HIGH_PRIORTY in box["labels"] and LabelEnum.HEAVY in box["labels"]:
+                        output.set_value(box["color"])
+                        self.output_color = box["color"]
+                        placed_box = self.box_list.pop(self.box_list.index(box))
+                        self.truck_box_list.append(placed_box)
+                        self.properties = box["labels"]
+                        return
 
-            for box in self.box_list:    
-                if LabelEnum.HIGH_PRIORTY in box["labels"] and LabelEnum.LIGHT in box["labels"]:
-                    output.set_value(box["color"])
-                    placed_box = self.box_list.pop(box_list.index(box))
-                    self.truck_box_list.append(placed_box)
-                    return
+                for box in self.box_list:    
+                    if LabelEnum.HIGH_PRIORTY in box["labels"] and LabelEnum.LIGHT in box["labels"]:
+                        output.set_value(box["color"])
+                        self.output_color = box["color"]
+                        placed_box = self.box_list.pop(self.box_list.index(box))
+                        self.truck_box_list.append(placed_box)
+                        self.properties = box["labels"]
+                        return
+    
+        elif mode == PlannerState.SHUFFLE_BOXES:
+            color = self.CalcGraspColor()
+            output.set_value(color)
             return
-        else:
-            return
+        return
         
 
     def Update(self, context, state):
@@ -191,12 +219,15 @@ class Planner(LeafSystem):
                     if mode == PlannerState.PICKING_BOX:
                         state.get_mutable_abstract_state(
                             int(self._mode_index)
-                        ).set_value(PlannerState.EMPTY_TRUCK)
-                    else:
+                        ).set_value(PlannerState.SHUFFLE_BOXES)
+                        self.Plan(context, state)
+                        
+                    elif mode == PlannerState.SHUFFLE_BOXES:
                         state.get_mutable_abstract_state(
                             int(self._mode_index)
-                        ).set_value(PlannerState.PICKING_BOX)
-                    self.Plan(context, state)
+                        ).set_value(PlannerState.GO_HOME)
+                        self.GoHome(context, state)
+                    # TODO What if the system is in another state?
                     return
 
                 attempts[0] += 1
@@ -235,7 +266,7 @@ class Planner(LeafSystem):
                 traj_X_G.GetPose(current_time).translation()
                 - X_G.translation()
             )
-            > 10
+            > 10 # TODO use as hyperparameter
         ):
             print("------->Current time: ", current_time)
             # If my trajectory tracking has gone this wrong, then I'd better
@@ -249,9 +280,10 @@ class Planner(LeafSystem):
         state.get_mutable_abstract_state(int(self._mode_index)).set_value(
             PlannerState.GO_HOME
         )
-        q = self.get_input_port(self._iiwa_position_index).Eval(context)
+        #q = self.get_input_port(self._iiwa_position_index).Eval(context)
+        q = [1,1,0, 0.0, 0.1, 0, -1.2, 0, 1.6, 0] # TODO change according to the run
         q0 = copy(context.get_discrete_state(self._q0_index).get_value())
-        q0[0] = q[0]  # Safer to not reset the first joint.
+        q0[3] = q[3]  # Safer to not reset the first joint.
 
         current_time = context.get_time()
         q_traj = PiecewisePolynomial.FirstOrderHold(
@@ -260,6 +292,7 @@ class Planner(LeafSystem):
         state.get_mutable_abstract_state(int(self._traj_q_index)).set_value(
             q_traj
         )
+
 
     def Plan(self, context, state):
         mode = copy(
@@ -271,21 +304,19 @@ class Planner(LeafSystem):
                 int(self._gripper_body_index)
             ]
         }
-
+        
         cost = np.inf
         for i in range(5):
-            if mode == PlannerState.EMPTY_TRUCK:
-                #cost, X_G["pick"] = self.get_input_port(
-                 #   self._truck_grasp_index
-                #).Eval(context)
+            if mode == PlannerState.SHUFFLE_BOXES:
                 cost, X_G["pick"] = self.GetInputPort("grasp").Eval(context)
                 if np.isinf(cost):
                     mode = PlannerState.PICKING_BOX
+            
             else:
                 print("---------->X_G", self.GetInputPort("grasp").Eval(context))
                 cost, X_G["pick"] = self.GetInputPort("grasp").Eval(context)
                 if np.isinf(cost):
-                    mode = PlannerState.EMPTY_TRUCK
+                    mode = PlannerState.SHUFFLE_BOXES
                 else:
                     mode = PlannerState.PICKING_BOX
 
@@ -294,25 +325,42 @@ class Planner(LeafSystem):
 
         assert not np.isinf(
             cost
-        ), "Could not find a valid grasp in either bin after 5 attempts"
+        ), "Could not find a valid grasp after 5 attempts"
         state.get_mutable_abstract_state(int(self._mode_index)).set_value(mode)
-
 
         # TODO(russt): The randomness should come in through a random input
         # port.
         if mode == PlannerState.PICKING_BOX:
-            # Place in truck:
-            X_G["place"] = RigidTransform(
-                RollPitchYaw(-np.pi / 2, 0, 0),
-                [self.rng.uniform(-0.25, 0.15), self.rng.uniform(-0.6, -0.4), 0.3],
-            )
-        else:
-            # Place in pickup area:
-            X_G["place"] = RigidTransform(
-                RollPitchYaw(-np.pi / 2, 0, np.pi / 2),
-                [self.rng.uniform(0.35, 0.65), self.rng.uniform(-0.12, 0.28), 0.3],
-            )
+            x = 0
+            z = 0
+            if LabelEnum.LOW_PRIORTY in self.properties:
+                x = -1.5
+            elif LabelEnum.MID_PRIORTY in self.properties:
+                x = -1
+            elif LabelEnum.HIGH_PRIORTY in self.properties:
+                x = -0.5
+            
+            if LabelEnum.HEAVY in self.properties:
+                z = 0.3
+            elif LabelEnum.LIGHT in self.properties:
+                z = 0.6
 
+            # Place in truck:
+            X_G["place"] = RigidTransform(RollPitchYaw(-np.pi / 2, 0, 0), [x,0,z])
+    
+        elif mode == PlannerState.SHUFFLE_BOXES:
+            dimension = 6
+            num_of_boxes = 5
+            grid = [f"{x},{y}" for x in range(dimension) for y in range(dimension)]
+            box_positions = np.random.choice(grid, replace=False, size=1)
+            tf = RigidTransform(
+                        RotationMatrix(),
+                        [0.15*(int(box_positions.split(",")[0])-dimension/2)+0.7, 0.15*(int(box_positions.split(",")[1])-dimension/2)-0.1, z])
+            
+            
+            # Place in pickup area:
+            X_G["place"] = tf
+        
         X_G, times = MakeGripperFrames(X_G, t0=context.get_time())
         print(
             f"Planned {times['postplace'] - times['initial']} second trajectory in mode {mode} at time {context.get_time()}."

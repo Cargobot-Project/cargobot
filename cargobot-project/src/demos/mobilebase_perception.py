@@ -99,9 +99,8 @@ i = 0
 for body_index in wh.plant.GetFloatingBaseBodies():
     tf = RigidTransform(
         RotationMatrix(),
-        [0.1*(int(box_positions[i].split(",")[0])-dimension/2)+0.7, 0.1*(int(box_positions[i].split(",")[1])-dimension/2)-0.1, z]
+        [0.2*(int(box_positions[i].split(",")[0])-dimension/2)+0.7, 0.2*(int(box_positions[i].split(",")[1])-dimension/2)-0.1, z]
     )
-    print(tf)
     wh.plant.SetFreeBodyPose(plant_context, wh.plant.get_body(body_index), tf)
     i += 1
 simulator.Initialize()

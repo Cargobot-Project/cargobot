@@ -41,7 +41,10 @@ We tested for CUDA 11.7, but CUDA is not backwards compatible therefore latest v
 	-v %cd%:/usr/cargobot \
 	-it cargobot_image:latest bash 
     ```
-5. Inside the container you can run usr/cargobot/cargobot-project/src/demos, you can find the executable files.
+5. You should download the segmentation models ".pt" files from the following link: https://drive.google.com/drive/folders/18CqN6_EuQoz0OQr-j_Ue9k9FkD2JsZ7s?usp=sharing
+6. After installing the .pt files, migrate those files to under the cargobot/cargobot-project/res/seg
+7. Inside the container you can run usr/cargobot/cargobot-project/src/demos, you can find the executable files.
+8. After executing any file, the simulation visualization can be reached in http://localhost:7000
 
 #### __If CUDA is available,__
 
@@ -60,8 +63,10 @@ We tested for CUDA 11.7, but CUDA is not backwards compatible therefore latest v
 	-v %cd%:/usr/cargobot \
 	-it cargobot_image:latest bash 
     ```
-5. Inside the container you can run usr/cargobot/cargobot-project/src/demos, you can find the executable files.
-6. After executing any file, the simulation visualization can be reached in http://localhost:7000
+5. You should download the segmentation models ".pt" files from the following link: https://drive.google.com/drive/folders/18CqN6_EuQoz0OQr-j_Ue9k9FkD2JsZ7s?usp=sharing
+6. After installing the .pt files, migrate those files to under the cargobot/cargobot-project/res/seg
+7. Inside the container you can run usr/cargobot/cargobot-project/src/demos, you can find the executable files.
+8. After executing any file, the simulation visualization can be reached in http://localhost:7000
 
 #### How To Reach GUI and give prompts to Cargobot
 

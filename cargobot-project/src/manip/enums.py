@@ -10,8 +10,8 @@ class BoxColorEnum(Enum):
     RED = 0
     BLUE = 1
     GREEN = 2
-    MAGENTA = 3
-    YELLOW = 4
+    MAGENTA = 4
+    YELLOW = 3
     CYAN = 5
 
 class LabelEnum(Enum):

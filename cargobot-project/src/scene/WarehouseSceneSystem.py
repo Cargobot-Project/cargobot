@@ -165,7 +165,12 @@ class WarehouseSceneSystem:
             )
         
         # Planner and Grasp Selector Bindings
-        box_list = [{"id": 1, "dimensions": (0.05, 0.05, 0.1), "labels": (LabelEnum.HIGH_PRIORTY, LabelEnum.HEAVY), "color": BoxColorEnum.BLUE}]
+        box_list = [{"id": 1, "dimensions": (0.05, 0.05, 0.1), "labels": (LabelEnum.LOW_PRIORTY, LabelEnum.HEAVY), "color": BoxColorEnum.BLUE},
+                    {"id": 2, "dimensions": (0.05, 0.05, 0.1), "labels": (LabelEnum.LOW_PRIORTY, LabelEnum.LIGHT), "color": BoxColorEnum.MAGENTA},
+                    {"id": 3, "dimensions": (0.05, 0.05, 0.1), "labels": (LabelEnum.MID_PRIORTY, LabelEnum.HEAVY), "color": BoxColorEnum.GREEN},
+                    {"id": 4, "dimensions": (0.05, 0.05, 0.1), "labels": (LabelEnum.MID_PRIORTY, LabelEnum.LIGHT), "color": BoxColorEnum.YELLOW},
+                    {"id": 5, "dimensions": (0.05, 0.05, 0.1), "labels": (LabelEnum.HIGH_PRIORTY, LabelEnum.HEAVY), "color": BoxColorEnum.RED},
+                    ]
         planner = self.builder.AddSystem(Planner(self.plant, box_list=box_list))
 
         self.builder.Connect(

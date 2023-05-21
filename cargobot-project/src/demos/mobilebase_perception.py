@@ -61,21 +61,11 @@ environment_diagram, environment_context, visualizer, plan = wh.diagram, wh.cont
 #cameras = generate_cameras(environment_diagram, environment_context, meshcat)
 print("Finished setting up the environment.\n")
 
-"""rgb_ims = wh.get_rgb_ims()
 
-# Make prediction from all cameras
-print("Run inference on camera 0...")
-object_idx = 1
-predictions = get_predictions(model, rgb_ims)
 #print("predictions type", type(predictions), type(predictions[0]))
 
-for i in range(len(rgb_ims)):
-    #print("Camera", i)
-    plot_camera_view(rgb_ims, i, f"./out/camera{i}.png")
 
-plot_predictions(predictions, object_idx, f"./out/")
-
-pcd = wh.get_pC()
+"""pcd = wh.get_pC()
 meshcat.SetObject("masked_cloud", pcd, point_size=0.003)
 print("Finished running inference on camera 0.\n")
 
@@ -84,8 +74,8 @@ grasp_cost, grasp_pose = wh.get_grasp()
 print("Found optimal grasp pose.\n")
 
 print( "Grasp pose: ", grasp_pose)
-print( "Grasp cost: ", grasp_cost)"""
-
+print( "Grasp cost: ", grasp_cost)
+"""
 simulator = Simulator(environment_diagram, environment_context)
 context = simulator.get_context()
 
@@ -103,10 +93,21 @@ for body_index in wh.plant.GetFloatingBaseBodies():
     )
     wh.plant.SetFreeBodyPose(plant_context, wh.plant.get_body(body_index), tf)
     i += 1
+rgb_ims = wh.get_rgb_ims()
+
+# Make prediction from all cameras
+"""print("Run inference on camera 0...")
+object_idx = 1
+predictions = get_predictions(model, rgb_ims)
+for i in range(len(rgb_ims)):
+    #print("Camera", i)
+    plot_camera_view(rgb_ims, i, f"./out/camera{i}.png")
+plot_predictions(predictions, object_idx, f"./out/")"""
+
 simulator.Initialize()
-pcd = wh.get_pC()
+"""pcd = wh.get_pC()
 meshcat.SetObject("masked_cloud", pcd, point_size=0.003)
-print("Finished running inference on camera 0.\n")
+print("Finished running inference on camera 0.\n")"""
 graph = pydot.graph_from_dot_data(environment_diagram.GetGraphvizString())[0]
 graph.write_jpg("system_output.jpg")
 

@@ -27,7 +27,7 @@ from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
 from manipulation.meshcat_utils import AddMeshcatTriad
 from scene.CameraSystem import cargobot_num_cameras, CameraSystem
 from segmentation.plot import add_meshcat_triad
-
+from manip.enums import *
 cargobot_num_classes = 6 # TBD
 
 def get_instance_segmentation_model(model_path: str, num_classes: int=cargobot_num_classes):
@@ -92,9 +92,10 @@ def vis_normals(normals, meshcat):
         time.sleep(1)
     """
         
-DEFAULT_MASK_THRESHOLD = 100
+DEFAULT_MASK_THRESHOLD = 150
 
-def get_merged_masked_pcd(predictions, rgb_ims, depth_ims, project_depth_to_pC_func, X_WCs, cam_infos, object_idx: int, meshcat=None, mask_threshold=DEFAULT_MASK_THRESHOLD, score_threshold=0.5):
+def get_merged_masked_pcd(predictions, rgb_ims, depth_ims, project_depth_to_pC_func, X_WCs, cam_infos, color: BoxColorEnum, meshcat=None, 
+                            mask_threshold=DEFAULT_MASK_THRESHOLD, score_threshold=0.6):
     """
     predictions: The output of the trained network (one for each camera)
     rgb_ims: RGBA images from each camera
@@ -105,8 +106,8 @@ def get_merged_masked_pcd(predictions, rgb_ims, depth_ims, project_depth_to_pC_f
     """
 
     pcd = []
-    crop_min = RigidTransform().multiply(np.array([-6, -6, 0.05]))
-    crop_max = RigidTransform().multiply(np.array([6, 6, 0.55]))
+    crop_min = RigidTransform().multiply(np.array([0, -1.5, 0.05]))
+    crop_max = RigidTransform().multiply(np.array([2, 1.5, 0.55]))
     avg = 0
     i = 0
     for prediction, rgb_im, depth_im, X_WC, cam_info in \
@@ -121,7 +122,17 @@ def get_merged_masked_pcd(predictions, rgb_ims, depth_ims, project_depth_to_pC_f
         # Your code here (populate spatial_points and rgb_points)
         ######################################
         i += 1
-        mask_idx = np.argmax(prediction[0]['labels'] == object_idx)
+        #print(prediction[0])
+        print("Color given: ", color.value)
+        mask_idx = 0
+        while mask_idx < len(prediction[0]["labels"]):
+            #print(prediction[0]["labels"][mask_idx])
+            if prediction[0]["labels"][mask_idx] == color.value:
+                break
+            mask_idx += 1
+        if mask_idx >= len(prediction[0]["labels"]):
+            continue
+        #mask_idx = np.argmax(prediction[0]['labels'] == color)
         avg += prediction[0]["scores"][mask_idx] 
         mask = prediction[0]['masks'][mask_idx, 0]
         mask_uvs = mask >= mask_threshold
@@ -196,5 +207,6 @@ def get_merged_masked_pcd(predictions, rgb_ims, depth_ims, project_depth_to_pC_f
     #print("merged pcd", merged_pcd.xyzs())
     # Voxelize down-sample.  (Note that the normals still look reasonable)
     merged_cropped_pcd = merged_pcd.Crop(lower_xyz=crop_min, upper_xyz=crop_max)
+    meshcat.SetObject("masked_cloud", merged_cropped_pcd, point_size=0.003)
     return merged_cropped_pcd
     #return merged_pcd.VoxelizedDownSample(voxel_size=0.005)

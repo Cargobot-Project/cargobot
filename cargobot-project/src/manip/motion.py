@@ -105,74 +105,78 @@ class Planner(LeafSystem):
         self.properties = (LabelEnum.LOW_PRIORTY, LabelEnum.HEAVY) # default
         self.color = BoxColorEnum.RED # default
         self.output_color = BoxColorEnum.RED # default
+        self.current_box = self.box_list[0]
 
     def CalcGraspColor(self):
-        color_list = np.array([BoxColorEnum.RED,BoxColorEnum.BLUE,BoxColorEnum.GREEN,BoxColorEnum.MAGENTA,BoxColorEnum.CYAN, BoxColorEnum.YELLOW])
+        color_list = np.array([BoxColorEnum.RED,BoxColorEnum.BLUE,BoxColorEnum.GREEN,BoxColorEnum.MAGENTA, BoxColorEnum.YELLOW])
         choice = self.output_color
         while choice != self.output_color:
             choice = np.random.choice(color_list, replace=False, size=1)
+        print("----Calc Grasp Color Choice: ", choice)
         self.color = choice
 
 
     def CalcColor(self, context, output):
         mode = context.get_abstract_state(int(self._mode_index)).get_value()
         if mode == PlannerState.WAIT_FOR_OBJECTS_TO_SETTLE or mode == PlannerState.PICKING_BOX:
+            print("----------------INSIDE CALCCOLOR PICKINGBOX")
             if self.box_list:
                 for box in self.box_list:
                     if LabelEnum.LOW_PRIORTY in box["labels"] and LabelEnum.HEAVY in box["labels"]:
                         output.set_value(box["color"])
+                        print("----CalcColor: ", box["color"])
                         self.output_color = box["color"]
-                        placed_box = self.box_list.pop(self.box_list.index(box))
-                        self.truck_box_list.append(placed_box)
                         self.properties = box["labels"]
+                        self.current_box = box
                         return
 
                 for box in self.box_list:    
                     if LabelEnum.LOW_PRIORTY in box["labels"] and LabelEnum.LIGHT in box["labels"]:
                         output.set_value(box["color"])
+                        print("----CalcColor: ", box["color"])
                         self.output_color = box["color"]
-                        placed_box = self.box_list.pop(self.box_list.index(box))
-                        self.truck_box_list.append(placed_box)
                         self.properties = box["labels"]
+                        self.current_box = box
                         return
 
                 for box in self.box_list:    
                     if LabelEnum.MID_PRIORTY in box["labels"] and LabelEnum.HEAVY in box["labels"]:
                         output.set_value(box["color"])
+                        print("----CalcColor: ", box["color"])
                         self.output_color = box["color"]
-                        placed_box = self.box_list.pop(self.box_list.index(box))
-                        self.truck_box_list.append(placed_box)
                         self.properties = box["labels"]
+                        self.current_box = box
                         return
 
                 for box in self.box_list:    
                     if LabelEnum.MID_PRIORTY in box["labels"] and LabelEnum.LIGHT in box["labels"]:
                         output.set_value(box["color"])
+                        print("----CalcColor: ", box["color"])
                         self.output_color = box["color"]
-                        placed_box = self.box_list.pop(self.box_list.index(box))
-                        self.truck_box_list.append(placed_box)
                         self.properties = box["labels"]
+                        self.current_box = box
                         return
 
                 for box in self.box_list:    
                     if LabelEnum.HIGH_PRIORTY in box["labels"] and LabelEnum.HEAVY in box["labels"]:
                         output.set_value(box["color"])
+                        print("----CalcColor: ", box["color"])
                         self.output_color = box["color"]
-                        placed_box = self.box_list.pop(self.box_list.index(box))
-                        self.truck_box_list.append(placed_box)
                         self.properties = box["labels"]
+                        self.current_box = box
                         return
 
                 for box in self.box_list:    
                     if LabelEnum.HIGH_PRIORTY in box["labels"] and LabelEnum.LIGHT in box["labels"]:
                         output.set_value(box["color"])
+                        print("----CalcColor: ", box["color"])
                         self.output_color = box["color"]
-                        placed_box = self.box_list.pop(self.box_list.index(box))
-                        self.truck_box_list.append(placed_box)
                         self.properties = box["labels"]
+                        self.current_box = box
                         return
     
         elif mode == PlannerState.SHUFFLE_BOXES:
+            print("----------------INSIDE CALCCOLOR SHUFFLEBOXES")
             color = self.CalcGraspColor()
             output.set_value(color)
             return
@@ -186,14 +190,18 @@ class Planner(LeafSystem):
         times = context.get_abstract_state(int(self._times_index)).get_value()
 
         if mode == PlannerState.WAIT_FOR_OBJECTS_TO_SETTLE:
+            print("UPDATE: FIRST WFOTS STATE")
             if context.get_time() - times["initial"] > 1.0:
+                self.GoHome(context, state)
                 self.Plan(context, state)
             return
         elif mode == PlannerState.GO_HOME:
+            print("UPDATE: FIRST GO HOME STATE")
             traj_q = context.get_mutable_abstract_state(
                 int(self._traj_q_index)
             ).get_value()
             if not traj_q.is_time_in_range(current_time):
+                self.GoHome(context, state)
                 self.Plan(context, state)
             return
 
@@ -203,10 +211,14 @@ class Planner(LeafSystem):
             current_time > times["postpick"]
             and current_time < times["preplace"]
         ):
+           
             wsg_state = self.get_input_port(self._wsg_state_index).Eval(
                 context
             )
             if wsg_state[0] < 0.01: # closed gripper
+                print("UPDATE: DROPPED THE BOX - OR COULD NOT GRASP")
+                if self.current_box not in self.box_list:
+                    self.box_list.append(self.current_box)
                 attempts = state.get_mutable_discrete_state(
                     int(self._attempts_index)
                 ).get_mutable_value()
@@ -220,13 +232,15 @@ class Planner(LeafSystem):
                         state.get_mutable_abstract_state(
                             int(self._mode_index)
                         ).set_value(PlannerState.SHUFFLE_BOXES)
+                        self.GoHome(context, state)
                         self.Plan(context, state)
                         
                     elif mode == PlannerState.SHUFFLE_BOXES:
                         state.get_mutable_abstract_state(
                             int(self._mode_index)
-                        ).set_value(PlannerState.GO_HOME)
+                        ).set_value(PlannerState.PICKING_BOX)
                         self.GoHome(context, state)
+                        self.Plan(context, state)
                     # TODO What if the system is in another state?
                     return
 
@@ -254,6 +268,7 @@ class Planner(LeafSystem):
             int(self._traj_X_G_index)
         ).get_value()
         if not traj_X_G.is_time_in_range(current_time):
+            self.GoHome(context, state)
             self.Plan(context, state)
             return
 
@@ -268,30 +283,45 @@ class Planner(LeafSystem):
             )
             > 10 # TODO use as hyperparameter
         ):
-            print("------->Current time: ", current_time)
+            
+            print("UPDATE: TOO FAR AWAY")
             # If my trajectory tracking has gone this wrong, then I'd better
             # stop and replan.  TODO(russt): Go home, in joint coordinates,
             # instead.
             self.GoHome(context, state)
             return
 
+        print("Mode: ", mode)
+        print("Current box: ", self.current_box)
+        print("Current Time: ", current_time)
+        print("End Time: ", times["preplace"])
+        if mode == PlannerState.PICKING_BOX and np.linalg.norm(traj_X_G.GetPose(times["preplace"]).translation()- X_G.translation()) < 0.2 and self.current_box in self.box_list:
+                    print("INSIDE BOX POP")
+                    tmp_box = self.box_list.pop(self.box_list.index(self.current_box))
+                    self.truck_box_list.append(tmp_box)
+
+
+
+    
     def GoHome(self, context, state):
-        print("Replanning due to large tracking error.")
+        print("GO HOME.")
         state.get_mutable_abstract_state(int(self._mode_index)).set_value(
             PlannerState.GO_HOME
         )
-        #q = self.get_input_port(self._iiwa_position_index).Eval(context)
-        q = [1,1,0, 0.0, 0.1, 0, -1.2, 0, 1.6, 0] # TODO change according to the run
+        q = self.get_input_port(self._iiwa_position_index).Eval(context)
+        #q = [0,0,0, 0.0, 0.1, 0, -1.2, 0, 1.6, 0] # TODO change according to the run
         q0 = copy(context.get_discrete_state(self._q0_index).get_value())
         q0[3] = q[3]  # Safer to not reset the first joint.
-
+        print(q)
+        print(q0)
         current_time = context.get_time()
         q_traj = PiecewisePolynomial.FirstOrderHold(
-            [current_time, current_time + 5.0], np.vstack((q, q0)).T
+            [current_time, current_time + 10.0], np.vstack((q, q0)).T
         )
         state.get_mutable_abstract_state(int(self._traj_q_index)).set_value(
             q_traj
         )
+        print("Done go home")
 
 
     def Plan(self, context, state):
@@ -323,9 +353,12 @@ class Planner(LeafSystem):
             if not np.isinf(cost):
                 break
 
-        assert not np.isinf(
-            cost
-        ), "Could not find a valid grasp after 5 attempts"
+        """if np.isinf(cost):
+            if mode == PlannerState.SHUFFLE_BOXES:
+                mode = PlannerState.PICKING_BOX
+            elif mode == PlannerState.PICKING_BOX:
+                mode = PlannerState.SHUFFLE_BOXES"""
+
         state.get_mutable_abstract_state(int(self._mode_index)).set_value(mode)
 
         # TODO(russt): The randomness should come in through a random input
@@ -343,7 +376,7 @@ class Planner(LeafSystem):
             if LabelEnum.HEAVY in self.properties:
                 z = 0.3
             elif LabelEnum.LIGHT in self.properties:
-                z = 0.6
+                z = 0.5
 
             # Place in truck:
             X_G["place"] = RigidTransform(RollPitchYaw(-np.pi / 2, 0, 0), [x,0,z])
@@ -355,12 +388,12 @@ class Planner(LeafSystem):
             box_positions = np.random.choice(grid, replace=False, size=1)
             tf = RigidTransform(
                         RotationMatrix(),
-                        [0.15*(int(box_positions.split(",")[0])-dimension/2)+0.7, 0.15*(int(box_positions.split(",")[1])-dimension/2)-0.1, z])
-            
-            
+                        [0.15*(int(box_positions[0].split(",")[0])-dimension/2)+0.7, 0.15*(int(box_positions[0].split(",")[1])-dimension/2)-0.1, 0.1])
             # Place in pickup area:
             X_G["place"] = tf
         
+
+
         X_G, times = MakeGripperFrames(X_G, t0=context.get_time())
         print(
             f"Planned {times['postplace'] - times['initial']} second trajectory in mode {mode} at time {context.get_time()}."
@@ -448,16 +481,17 @@ class Planner(LeafSystem):
 
     def CalcControlMode(self, context, output):
         mode = context.get_abstract_state(int(self._mode_index)).get_value()
-
+        
         if mode == PlannerState.GO_HOME:
+            print("CALCCONTROLMODE: ", mode)
             output.set_value(InputPortIndex(2))  # Go Home
         else:
             output.set_value(InputPortIndex(1))  # Diff IK
 
     def CalcDiffIKReset(self, context, output):
         mode = context.get_abstract_state(int(self._mode_index)).get_value()
-
         if mode == PlannerState.GO_HOME:
+            print("CALCDIFFIKRESET: ", mode)
             output.set_value(True)
         else:
             output.set_value(False)
@@ -475,7 +509,7 @@ class Planner(LeafSystem):
         output.SetFromVector(traj_q.value(context.get_time()))
 
 
-class PickAndPlaceTrajectory(LeafSystem):
+"""class PickAndPlaceTrajectory(LeafSystem):
     def __init__(self, plant):
         LeafSystem.__init__(self)
         self._gripper_body_index = plant.GetBodyByName("body").index()
@@ -546,4 +580,4 @@ class PickAndPlaceTrajectory(LeafSystem):
         # output port.
         output.SetFromVector(
             context.get_abstract_state(int(
-                self._traj_wsg_index)).get_value().value(context.get_time()))
+                self._traj_wsg_index)).get_value().value(context.get_time()))"""

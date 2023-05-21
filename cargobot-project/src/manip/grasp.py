@@ -334,7 +334,7 @@ class GraspSelector(LeafSystem):
             output.set_value((min_cost, best_X_G))
             return
         
-        for i in range(100):
+        for i in range(200):
             cost, X_G = GenerateAntipodalGraspCandidate(diagram, self._internal_context, cloud, self._rng)
             if np.isfinite(cost) and cost < min_cost:
                 min_cost = cost

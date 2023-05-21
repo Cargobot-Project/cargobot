@@ -7,8 +7,28 @@ from django.http import HttpResponse,HttpResponseRedirect
 from django.template import loader
 
 from demos.mobilebase_perception import run_demo
-
+from manip.enums import LabelEnum, BoxColorEnum
 from enum import Enum
+
+
+from copy import deepcopy
+from urllib.request import urlretrieve
+
+import matplotlib.pyplot as plt
+import numpy as np
+import torch
+import torch.utils.data
+import torchvision
+import torchvision.transforms.functional as Tf
+from IPython.display import clear_output, display
+from manipulation import running_as_notebook
+from manipulation.clutter import GenerateAntipodalGraspCandidate
+from manipulation.scenarios import AddRgbdSensors
+from manipulation.utils import AddPackagePaths, FindResource, LoadDataResource
+from pydrake.all import (BaseField, Concatenate, Fields, MeshcatVisualizer,
+                         MeshcatVisualizerParams, PointCloud, Quaternion, Rgba,
+                         RigidTransform, RotationMatrix, StartMeshcat)
+
 status = "NOT_WORKING" #task durumu 
 progress = "0%" # task runlandıktan sonraki process
 config = "UNDONE" #kutu ve label secimi boolean valuesu
@@ -32,21 +52,7 @@ class Box:
         self.depth = depth
     def __str__(self):
         return "Box {} height={} width={} depth={} label={}".format(self.id,self.height,self.width,self.depth,self.label)
-        
-class BoxColorEnum(Enum):
-    RED = 0
-    GREEN = 1
-    BLUE = 2
-    MAGENTA = 3
-    YELLOW = 4
-    CYAN = 5
 
-class LabelEnum(Enum):
-    LOW_PRIORITY = 0
-    HIGH_PRIORITY = 1
-    LIGHT = 2
-    HEAVY = 3
-    MID_PRIORITY = 4
 
 def match_enums(label):
     weight = None
@@ -57,11 +63,11 @@ def match_enums(label):
     if label.weight == 'heavy':
         weight = LabelEnum.HEAVY
     if label.priority == 'low':
-        priority = LabelEnum.LOW_PRIORITY
+        priority = LabelEnum.LOW_PRIORTY
     if label.priority == 'medium':
-        priority = LabelEnum.MID_PRIORITY
+        priority = LabelEnum.MID_PRIORTY
     if label.priority == 'high':
-        priority = LabelEnum.HEAVY
+        priority = LabelEnum.HIGH_PRIORTY
     if label.name == 'red':
         color = BoxColorEnum.RED
     elif label.name == 'green':
@@ -227,19 +233,18 @@ def assign_label_to_boxes(request):
                 if label.name == label_name:
                     box.label = label
     box_list = box_tuple_adaptor()
-    run_demo(box_list)
     webbrowser.open('localhost:7000/')
+    simulator, meshcat, visualizer = run_demo(box_list)
+    meshcat.AddButton("Stop Simulation", "Escape")
+    while meshcat.GetButtonClicks("Stop Simulation") < 1:
+        simulator.AdvanceTo(simulator.get_context().get_time() + 2.0)
+    visualizer.PublishRecording()
+    
     return redirect('index')
 
 def meshcat_opener():
     redirect_url = 'localhost:7000/'
     return HttpResponseRedirect(redirect_url)
-
-
-        
-
-
-
 
 def start_process(request):
     pass

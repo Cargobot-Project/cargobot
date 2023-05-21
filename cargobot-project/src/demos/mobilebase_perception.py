@@ -19,14 +19,12 @@ from manipulation.scenarios import AddRgbdSensors
 from manipulation.utils import AddPackagePaths, FindResource, LoadDataResource
 from pydrake.all import (BaseField, Concatenate, Fields, MeshcatVisualizer,
                          MeshcatVisualizerParams, PointCloud, Quaternion, Rgba,
-                         RigidTransform, RotationMatrix, StartMeshcat)
-
-from pydrake.all import RigidTransform, RollPitchYaw
+                         RigidTransform, RotationMatrix, StartMeshcat, RollPitchYaw)
 
 from scene.WarehouseSceneSystem import WarehouseSceneSystem
-
+from segmentation.plot import *
 from segmentation.util import get_instance_segmentation_model, get_predictions, get_merged_masked_pcd
-
+from manip.enums import *
 import pydot
 from pydrake.all import Simulator, RandomGenerator
 
@@ -76,7 +74,10 @@ def run_demo(box_list):
 
     dimension = len(box_list)
     num_of_boxes = len(box_list)
-    grid = [f"{x},{y}" for x in range(dimension) for y in range(dimension)]
+    grid = [f"{x},0" for x in range(dimension)]
+    grid = grid + ([f"{x},{dimension-1}" for x in range(dimension)])
+    grid = ([f"{dimension-1},{x}" for x in range(dimension)])
+    print(grid)
     box_positions = np.random.choice(grid, replace=False, size=num_of_boxes)
     plant_context = wh.plant.GetMyMutableContextFromRoot(context)
     z=0.1
@@ -91,7 +92,7 @@ def run_demo(box_list):
         wh.plant.SetFreeBodyPose(plant_context, wh.plant.get_body(body_index), tf)
         i += 1
     
-    """rgb_ims = wh.get_rgb_ims()
+    rgb_ims = wh.get_rgb_ims()
 
     # Make prediction from all cameras
     print("Run inference on camera 0...")
@@ -100,7 +101,7 @@ def run_demo(box_list):
     for i in range(len(rgb_ims)):
         #print("Camera", i)
         plot_camera_view(rgb_ims, i, f"./out/camera{i}.png")
-    plot_predictions(predictions, object_idx, f"./out/")"""
+    plot_predictions(predictions, object_idx, f"./out/")
 
     simulator.Initialize()
     """pcd = wh.get_pC()
@@ -114,5 +115,12 @@ def run_demo(box_list):
     
     return simulator, meshcat, visualizer
 
-    
-
+box_list = [{'id': 0, 'dimensions': ('0.1', '0.1', '0.2'), 'labels': (LabelEnum.HEAVY, LabelEnum.LOW_PRIORTY), 'color': BoxColorEnum.BLUE},
+            {'id': 1, 'dimensions': ('0.1', '0.1', '0.2'), 'labels': (LabelEnum.LIGHT, LabelEnum.LOW_PRIORTY), 'color': BoxColorEnum.GREEN},
+            {'id': 2, 'dimensions': ('0.1', '0.1', '0.1'), 'labels': (LabelEnum.HEAVY, LabelEnum.MID_PRIORTY), 'color': BoxColorEnum.YELLOW},
+            {'id': 3, 'dimensions': ('0.2', '0.1', '0.2'), 'labels': (LabelEnum.HEAVY, LabelEnum.HIGH_PRIORTY), 'color': BoxColorEnum.MAGENTA}]
+simulator, meshcat, visualizer = run_demo(box_list)
+meshcat.AddButton("Stop Simulation", "Escape")
+while meshcat.GetButtonClicks("Stop Simulation") < 1:
+    simulator.AdvanceTo(simulator.get_context().get_time() + 2.0)
+visualizer.PublishRecording()

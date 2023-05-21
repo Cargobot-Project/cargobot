@@ -8,8 +8,8 @@ class PlannerState(Enum):
 
 class BoxColorEnum(Enum):
     RED = 0
-    GREEN = 1
-    BLUE = 2
+    GREEN = 2
+    BLUE = 1
     MAGENTA = 4
     YELLOW = 3
     CYAN = 5

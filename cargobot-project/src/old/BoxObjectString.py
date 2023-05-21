@@ -62,9 +62,9 @@ class BoxObjectString():
         color_text = ""
         if self.color == 0:
             color_text = "<ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse><emissive>1 0 0 1</emissive>"
-        elif self.color == 2:
-            color_text = "<ambient>0 0 1 1</ambient><diffuse>0 0 1 1</diffuse><emissive>0 0 1 1</emissive>"
         elif self.color == 1:
+            color_text = "<ambient>0 0 1 1</ambient><diffuse>0 0 1 1</diffuse><emissive>0 0 1 1</emissive>"
+        elif self.color == 2:
             color_text = "<ambient>0 1 0 1</ambient><diffuse>0 1 0 1</diffuse><emissive>0 1 0 1</emissive>"
         elif self.color == 3:
             color_text = "<ambient>1 1 0 1</ambient><diffuse>1 1 0 1</diffuse><emissive>1 1 0 1</emissive>"

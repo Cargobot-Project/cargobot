@@ -123,7 +123,7 @@ def get_merged_masked_pcd(predictions, rgb_ims, depth_ims, project_depth_to_pC_f
         ######################################
         i += 1
         #print(prediction[0])
-        print("Color given: ", color.value)
+        print("Color given: ", color, "-", color.value)
         mask_idx = 0
         while mask_idx < len(prediction[0]["labels"]):
             #print(prediction[0]["labels"][mask_idx])

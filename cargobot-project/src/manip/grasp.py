@@ -394,9 +394,9 @@ class GraspSelector(LeafSystem):
         plant = self._internal_plant
         scene_graph = self._internal_scene_graph
 
-        object_idx = self.GetInputPort("color").Eval(context)
-
-        cloud = get_merged_masked_pcd(predictions, rgb_ims, depth_ims, self.project_depth_to_pC, X_WCs, cam_infos, object_idx, meshcat=self.meshcat)
+        color = self.GetInputPort("color").Eval(context)
+    
+        cloud = get_merged_masked_pcd(predictions, rgb_ims, depth_ims, self.project_depth_to_pC, X_WCs, cam_infos, color, meshcat=self.meshcat)
         return cloud
 
     def get_grasp(self, outer_context):

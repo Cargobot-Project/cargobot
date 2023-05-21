@@ -41,13 +41,14 @@ class WarehouseSceneSystem:
             meshcat,
             scene_path: str="/usr/cargobot/cargobot-project/res/box_with_cameras.dmd.yaml",
             name="warehouse_scene_system",
-            add_cameras: bool=True
+            add_cameras: bool=True,
+            given_boxes=[]
             ):
         self.meshcat = meshcat
-        
+        print(given_boxes)
         self.builder = DiagramBuilder()
         self.box_cnt = 5
-        self.station = self.builder.AddSystem(MakeManipulationStation( time_step=0.002, filename=scene_path, box_cnt=self.box_cnt))
+        self.station = self.builder.AddSystem(MakeManipulationStation( time_step=0.002, filename=scene_path, box_list=given_boxes))
         self.plant = self.station.GetSubsystemByName("plant")
         self.plant_context = self.plant.GetMyMutableContextFromRoot(self.station.CreateDefaultContext())
         self.scene_graph = self.station.GetSubsystemByName("scene_graph")
@@ -106,7 +107,7 @@ class WarehouseSceneSystem:
             )
         )
 
-        self.planner = self.wire_ports()
+        self.planner = self.wire_ports(given_boxes)
 
         self.visualizer = MeshcatVisualizer.AddToBuilder(
             self.builder, self.station.GetOutputPort("query_object"), meshcat)
@@ -146,7 +147,7 @@ class WarehouseSceneSystem:
         return pC
 
 
-    def wire_ports(self):
+    def wire_ports(self, given_boxes):
         # Camera bindings
         for i, camera in enumerate(self.cameras):
             self.builder.Connect(
@@ -165,12 +166,7 @@ class WarehouseSceneSystem:
             )
         
         # Planner and Grasp Selector Bindings
-        box_list = [{"id": 1, "dimensions": (0.05, 0.05, 0.1), "labels": (LabelEnum.LOW_PRIORTY, LabelEnum.HEAVY), "color": BoxColorEnum.BLUE},
-                    {"id": 2, "dimensions": (0.05, 0.05, 0.1), "labels": (LabelEnum.LOW_PRIORTY, LabelEnum.LIGHT), "color": BoxColorEnum.MAGENTA},
-                    {"id": 3, "dimensions": (0.05, 0.05, 0.1), "labels": (LabelEnum.MID_PRIORTY, LabelEnum.HEAVY), "color": BoxColorEnum.GREEN},
-                    {"id": 4, "dimensions": (0.05, 0.05, 0.1), "labels": (LabelEnum.MID_PRIORTY, LabelEnum.LIGHT), "color": BoxColorEnum.YELLOW},
-                    {"id": 5, "dimensions": (0.05, 0.05, 0.1), "labels": (LabelEnum.HIGH_PRIORTY, LabelEnum.HEAVY), "color": BoxColorEnum.RED},
-                    ]
+        box_list = given_boxes
         planner = self.builder.AddSystem(Planner(self.plant, box_list=box_list))
 
         self.builder.Connect(

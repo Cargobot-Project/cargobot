@@ -77,8 +77,8 @@
          <axis>
         <xyz expressed_in="__model__">0 1 0</xyz>
         <limit>
-          <lower>-3</lower>
-          <upper>3</upper>
+          <lower>0</lower>
+          <upper>0</upper>
           <effort>300</effort>
           <velocity>0.1</velocity>
         </limit>

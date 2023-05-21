@@ -150,15 +150,18 @@ def generate_scene(number_of_times):
         #visualizer.PublishRecording()
 
 
-def generate_boxes( plant, parser, num_of_boxes=None, list_of_boxes=None):
+def generate_boxes(plant, parser, box_list):
     instances = []
-    color = np.random.choice([0,1,2,3,4], replace=False, size=num_of_boxes)
-    for i in range(num_of_boxes):
-        """box_rotation = [np.pi/2*np.random.randint(4), np.pi/2*np.random.randint(4), np.pi/2*np.random.randint(4)]
-        box_position = [2*int(box_positions[i][0]), int(box_positions[i][2]), 0.05]"""
-        box = BoxObjectString(color[i], .1, .1, .2, 1, "", [0,0,0], [0,0,0])
+    print("Box List in generate boxes: ", box_list)
+    #color = np.random.choice([0,1,2,3,4], replace=False, size=len(box_list))
+    i = 0
+    for box in box_list:
+        print(box["color"])
+        box = BoxObjectString(box["color"].value, float(box["dimensions"][0]), float(box["dimensions"][1]), float(box["dimensions"][2]), 1, "", [0,0,0], [0,0,0])
         sdf = box.generate_sdf_string(f"box{i}")
         instance = parser.AddModelsFromString(sdf, "sdf")
         instances.append(instance)
+        print(f"Added box {i}")
+        i+= 1
     return instances
     

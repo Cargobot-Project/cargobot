@@ -55,7 +55,7 @@ def MakeManipulationStation(model_directives=None,
                             camera_prefix="camera",
                             prefinalize_callback=None,
                             package_xmls=[],
-                            box_cnt=5):
+                            box_list=[]):
 
     builder = DiagramBuilder()
 
@@ -75,7 +75,7 @@ def MakeManipulationStation(model_directives=None,
     if prefinalize_callback:
         prefinalize_callback(plant)
     
-    boxes = generate_boxes(plant, parser, box_cnt)
+    boxes = generate_boxes(plant, parser, box_list= box_list)
     plant.Finalize()
     
 

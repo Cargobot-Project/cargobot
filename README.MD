@@ -35,8 +35,6 @@ We tested for CUDA 11.7, but CUDA is not backwards compatible therefore latest v
 4. Run the image and create container as follows,
    ``` 
    docker run --name cargobot_container \
-	--runtime=nvidia \
-	--gpus all \
 	--privileged \
 	-p 7000:7000 \
    	-p 8888:8888 \

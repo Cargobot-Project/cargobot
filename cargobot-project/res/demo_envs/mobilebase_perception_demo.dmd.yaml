@@ -1,0 +1,46 @@
+directives:          
+    - add_model:
+        name: cargo-space
+        file: file:///usr/cargobot/cargobot-project/res/cargo-space.sdf
+
+    - add_weld:
+        parent: world
+        child: cargo-space::cargo-space
+        X_PC:
+            rotation: !Rpy { deg: [0, 90, 0 ]}
+            translation: [-1.5, 0, 0.4]
+
+    - add_frame: 
+        name: table_top_center
+        X_PF:
+            base_frame: world
+            rotation: !Rpy { deg: [0, 0, 0]}
+            translation: [0, 0, -0.025]
+
+    - add_model:
+        name: table_top
+        file: file:///usr/cargobot/cargobot-project/res/table_top.sdf
+
+    - add_weld: 
+        parent: table_top_center
+        child: table_top_link
+
+    - add_model:
+        name: iiwa
+        file: file:///usr/cargobot/cargobot-project/res/mobile_iiwa.sdf
+    
+
+    - add_model:
+        name: wsg
+        file: package://drake/manipulation/models/wsg_50_description/sdf/schunk_wsg_50_with_tip.sdf
+        
+    - add_weld:
+        parent: iiwa::iiwa_link_7
+        child: wsg::body
+        X_PC:
+            rotation: !Rpy {deg: [90, 0, 90]}
+            translation: [0, 0, 0.09]
+            
+
+    
+        

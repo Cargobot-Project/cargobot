@@ -1,5 +1,4 @@
 directives:
-
 - add_frame:
     name: box-vertical_origin
     X_PF:
@@ -12,7 +11,7 @@ directives:
     file: file:///usr/cargobot/cargobot-project/perception/models/box-vertical.urdf
     
 - add_weld:
-    parent: box-vertical_origin
+    parent: world
     child: box-vertical::base_link_box-vertical
 
 - add_frame:

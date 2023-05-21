@@ -37,7 +37,7 @@ from pydrake.all import (AddMultibodyPlantSceneGraph, Box,
 from manipulation import running_as_notebook
 from manipulation.scenarios import (AddRgbdSensor, AddShape, ycb)
 import json
-from BoxObjectString import BoxObjectString
+from old.BoxObjectString import *
 
 
 
@@ -48,13 +48,13 @@ def generate_scene(number_of_times):
     rs = np.random.RandomState()  # this is for python
     generator = RandomGenerator(rs.randint(1000))  # this is for c++
 
-    path = "dataset/"
+    path = "dataset2/"
 
     for epoch in range(number_of_times):
         if epoch % 100 == 0:
             print(epoch)
 
-        filename_base = os.path.join(path,  f"{epoch+2000:05d}")
+        filename_base = os.path.join(path,  f"{epoch+168:05d}")
 
         builder = DiagramBuilder()
 
@@ -91,7 +91,7 @@ def generate_scene(number_of_times):
             json.dump(instance_id_to_class_name, f)
 
         camera1 = AddRgbdSensor(builder, scene_graph, RigidTransform(
-            RollPitchYaw(np.pi, np.pi/4,  np.pi / 2.0), [0, 1.5, 1.5]))
+            RollPitchYaw(np.pi, -np.pi/4,  np.pi / 2.0), [0, -1.5, 1.5]))
         builder.ExportOutput(camera1.color_image_output_port(), "color_image1")
         builder.ExportOutput(camera1.label_image_output_port(), "label_image1")
 
@@ -109,7 +109,7 @@ def generate_scene(number_of_times):
         simulator = Simulator(diagram)
         context = simulator.get_mutable_context()
         plant_context = plant.GetMyContextFromRoot(context)
-        visualizer.StartRecording()
+        #visualizer.StartRecording()
         
         z = 0.2
         for body_index in plant.GetFloatingBaseBodies():
@@ -121,8 +121,8 @@ def generate_scene(number_of_times):
                                 tf)
             z += 0.1
         
-        meshcat.Flush()  # Wait for the large object meshes to get to meshcat.
-    
+        #meshcat.Flush()  # Wait for the large object meshes to get to meshcat.
+        simulator.set_target_realtime_rate(5.0)
         simulator.AdvanceTo(5.0)
 
         color_image1 = diagram.GetOutputPort("color_image1").Eval(context)
@@ -147,6 +147,18 @@ def generate_scene(number_of_times):
         plt.axis('off')
         plt.savefig(f"dataset/scene{epoch}_cam3.png"  )"""
 
-        visualizer.PublishRecording()
+        #visualizer.PublishRecording()
 
-generate_scene(5000)
+
+def generate_boxes( plant, parser, num_of_boxes=None, list_of_boxes=None):
+    instances = []
+    color = np.random.choice([0,1,2,3,4], replace=False, size=num_of_boxes)
+    for i in range(num_of_boxes):
+        """box_rotation = [np.pi/2*np.random.randint(4), np.pi/2*np.random.randint(4), np.pi/2*np.random.randint(4)]
+        box_position = [2*int(box_positions[i][0]), int(box_positions[i][2]), 0.05]"""
+        box = BoxObjectString(color[i], .1, .1, .2, 1, "", [0,0,0], [0,0,0])
+        sdf = box.generate_sdf_string(f"box{i}")
+        instance = parser.AddModelsFromString(sdf, "sdf")
+        instances.append(instance)
+    return instances
+    

@@ -4,6 +4,7 @@ RUN pip3 install torch \
     && pip3 install torchvision \
     && pip3 install torchaudio \
     && pip3 install nbconvert \
-    && pip3 install ipython
+    && pip3 install ipython \
+    && pip3 install django
 
 ENTRYPOINT /bin/bash

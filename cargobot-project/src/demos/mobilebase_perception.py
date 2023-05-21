@@ -75,10 +75,11 @@ def run_demo(box_list):
     dimension = len(box_list)
     num_of_boxes = len(box_list)
     grid = [f"{x},0" for x in range(dimension)]
-    grid = grid + ([f"{x},{dimension-1}" for x in range(dimension)])
-    grid = ([f"{dimension-1},{x}" for x in range(dimension)])
+    grid = grid + [f"{x},{dimension-1}" for x in range(dimension)]
+    grid = grid + [f"{dimension-1},{x}" for x in range(dimension)]
     print(grid)
     box_positions = np.random.choice(grid, replace=False, size=num_of_boxes)
+    print(box_positions)
     plant_context = wh.plant.GetMyMutableContextFromRoot(context)
     z=0.1
     i = 0
@@ -87,7 +88,7 @@ def run_demo(box_list):
         random_z = np.random.uniform(0, 2*np.pi)
         tf = RigidTransform(
             RotationMatrix(RollPitchYaw(0,0,random_z)),
-            [0.2*(int(box_positions[i].split(",")[0])-dimension/2)+0.7, 0.2*(int(box_positions[i].split(",")[1])-dimension/2)-0.1, z]
+            [1/dimension*(int(box_positions[i].split(",")[0]))+0.2, 1/dimension*(int(box_positions[i].split(",")[1])-dimension/2), z]
         )
         wh.plant.SetFreeBodyPose(plant_context, wh.plant.get_body(body_index), tf)
         i += 1
@@ -114,11 +115,11 @@ def run_demo(box_list):
     visualizer.StartRecording(True)
     
     return simulator, meshcat, visualizer
-
-box_list = [{'id': 0, 'dimensions': ('0.1', '0.1', '0.2'), 'labels': (LabelEnum.HEAVY, LabelEnum.LOW_PRIORTY), 'color': BoxColorEnum.BLUE},
-            {'id': 1, 'dimensions': ('0.1', '0.1', '0.2'), 'labels': (LabelEnum.LIGHT, LabelEnum.LOW_PRIORTY), 'color': BoxColorEnum.GREEN},
-            {'id': 2, 'dimensions': ('0.1', '0.1', '0.1'), 'labels': (LabelEnum.HEAVY, LabelEnum.MID_PRIORTY), 'color': BoxColorEnum.YELLOW},
-            {'id': 3, 'dimensions': ('0.2', '0.1', '0.2'), 'labels': (LabelEnum.HEAVY, LabelEnum.HIGH_PRIORTY), 'color': BoxColorEnum.MAGENTA}]
+x = 0.08
+box_list = [{'id': 0, 'dimensions': (f'{x}', f'{x}', f'{2*x}'), 'labels': (LabelEnum.HEAVY, LabelEnum.LOW_PRIORTY), 'color': BoxColorEnum.BLUE},
+            {'id': 1, 'dimensions': (f'{x}', f'{x}', f'{2*x}'), 'labels': (LabelEnum.LIGHT, LabelEnum.LOW_PRIORTY), 'color': BoxColorEnum.GREEN},
+            {'id': 2, 'dimensions': (f'{x}', f'{x}', f'{x}'), 'labels': (LabelEnum.HEAVY, LabelEnum.MID_PRIORTY), 'color': BoxColorEnum.YELLOW},
+            {'id': 3, 'dimensions': (f'{2*x}', f'{x}', f'{2*x}'), 'labels': (LabelEnum.HEAVY, LabelEnum.HIGH_PRIORTY), 'color': BoxColorEnum.MAGENTA}]
 simulator, meshcat, visualizer = run_demo(box_list)
 meshcat.AddButton("Stop Simulation", "Escape")
 while meshcat.GetButtonClicks("Stop Simulation") < 1:

@@ -112,7 +112,7 @@ def get_merged_masked_pcd(predictions, rgb_ims, depth_ims, project_depth_to_pC_f
     i = 0
     for prediction, rgb_im, depth_im, X_WC, cam_info in \
             zip(predictions, rgb_ims, depth_ims, X_WCs, cam_infos):
-        print(prediction)
+        
         # These arrays aren't the same size as the correct outputs, but we're
         # just initializing them to something valid for now.
         spatial_points = np.zeros((3, 1))

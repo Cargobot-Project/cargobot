@@ -43,7 +43,7 @@
       </inertial>
       <gravity>1</gravity>
     </link>
-     <joint name="mobile_base_x" type="prismatic">
+    <joint name="mobile_base_x" type="prismatic">
         <child>false_body</child>
         <parent>world</parent>
          <axis>
@@ -71,7 +71,7 @@
       </inertial>
       <gravity>1</gravity>
     </link>
-     <joint name="mobile_base_y" type="prismatic">
+    <joint name="mobile_base_y" type="prismatic">
         <child>false_body2</child>
         <parent>false_body</parent>
          <axis>

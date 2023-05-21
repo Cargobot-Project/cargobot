@@ -1,5 +1,5 @@
 from django.shortcuts import render,redirect
-from django.http import HttpResponse
+from django.http import HttpResponse,HttpResponseRedirect
 from django.template import loader
 from enum import Enum
 status = "NOT_WORKING" #task durumu 
@@ -219,8 +219,13 @@ def assign_label_to_boxes(request):
             for label in label_container:
                 if label.name == label_name:
                     box.label = label    
-    return redirect('index')
+    #return redirect('index')
+    #run demo function here
+    #call meshcat_opener
 
+def meshcat_opener():
+    redirect_url = 'http://127.0.0.1:7000/'
+    return HttpResponseRedirect(redirect_url)
 
 
         

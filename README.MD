@@ -31,7 +31,7 @@ We tested for CUDA 11.7, but CUDA is not backwards compatible therefore latest v
 1. Make sure that you have downloaded the source code from GitHub link above, and you are in the project directory.
 2. Change the file name of NoCUDAAvailable-Dockerfile to Dockerfile.
 3. Then build the image as below follows, 
-   ``` docker build -t cargobot_image ```
+   ``` docker build -t cargobot_image .```
 4. Run the image and create container as follows,
    ``` 
    docker run --name cargobot_container \
@@ -48,7 +48,7 @@ We tested for CUDA 11.7, but CUDA is not backwards compatible therefore latest v
 1. Make sure that you have downloaded the source code from GitHub link above, and you are in the project directory.
 2. Change the file name of CUDAAvailable-Dockerfile to Dockerfile.
 3. Then build the image as below follows, 
-   ``` docker build -t cargobot_image ```
+   ``` docker build -t cargobot_image .```
 4. Run the image and create container as follows,
    ``` 
    docker run --name cargobot_container \

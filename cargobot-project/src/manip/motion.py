@@ -44,6 +44,10 @@ class Planner(LeafSystem):
         self._x_bin_grasp_index = self.DeclareAbstractInputPort(
             "grasp", AbstractValue.Make((np.inf, RigidTransform()))
         ).get_index()
+
+        self._y_bin_grasp_index = self.DeclareAbstractInputPort(
+            "grasp_shuffle", AbstractValue.Make((np.inf, RigidTransform()))
+        ).get_index()
         
         self._pickup_grasp_index = self.DeclareAbstractInputPort(
             "pickup_grasp", AbstractValue.Make((np.inf, RigidTransform()))
@@ -102,84 +106,82 @@ class Planner(LeafSystem):
         self.DeclarePeriodicUnrestrictedUpdateEvent(0.1, 0.0, self.Update)
         self.rng = np.random.default_rng(135)
         self.DeclareAbstractOutputPort("color", lambda: AbstractValue.Make(BoxColorEnum.RED), self.CalcColor, prerequisites_of_calc=set([self.xc_ticket()]))
+        self.DeclareAbstractOutputPort("color_shuffle", lambda: AbstractValue.Make(BoxColorEnum.RED), self.CalcShuffleColor, prerequisites_of_calc=set([self.xc_ticket()]))
         self.properties = (LabelEnum.LOW_PRIORTY, LabelEnum.HEAVY) # default
         self.color = BoxColorEnum.RED # default
+        self.color_shuffle = BoxColorEnum.RED # default
         self.output_color = BoxColorEnum.RED # default
         self.current_box = self.box_list[0]
 
-    def CalcGraspColor(self):
+    def CalcShuffleColor(self, context, output):
         color_list = np.array([BoxColorEnum.RED,BoxColorEnum.BLUE,BoxColorEnum.GREEN,BoxColorEnum.MAGENTA, BoxColorEnum.YELLOW])
         choice = self.output_color
-        while choice != self.output_color:
+        while choice == self.output_color or choice in self.truck_box_list:
             choice = np.random.choice(color_list, replace=False, size=1)
-        print("----Calc Grasp Color Choice: ", choice)
-        self.color = choice
-
+        print(choice)
+        self.color_shuffle = choice
+        print("CALCSHUFFLECOLOR")
+        output.set_value(choice[0])
 
     def CalcColor(self, context, output):
         mode = context.get_abstract_state(int(self._mode_index)).get_value()
-        if mode == PlannerState.WAIT_FOR_OBJECTS_TO_SETTLE or mode == PlannerState.PICKING_BOX:
-            print("----------------INSIDE CALCCOLOR PICKINGBOX")
-            if self.box_list:
-                for box in self.box_list:
-                    if LabelEnum.LOW_PRIORTY in box["labels"] and LabelEnum.HEAVY in box["labels"]:
-                        output.set_value(box["color"])
-                        print("----CalcColor: ", box["color"])
-                        self.output_color = box["color"]
-                        self.properties = box["labels"]
-                        self.current_box = box
-                        return
 
-                for box in self.box_list:    
-                    if LabelEnum.LOW_PRIORTY in box["labels"] and LabelEnum.LIGHT in box["labels"]:
-                        output.set_value(box["color"])
-                        print("----CalcColor: ", box["color"])
-                        self.output_color = box["color"]
-                        self.properties = box["labels"]
-                        self.current_box = box
-                        return
+        if self.box_list:
+            for box in self.box_list:
+                if LabelEnum.LOW_PRIORTY in box["labels"] and LabelEnum.HEAVY in box["labels"]:
+                    output.set_value(box["color"])
+                    print("----CalcColor: ", box["color"])
+                    self.output_color = box["color"]
+                    self.properties = box["labels"]
+                    self.current_box = box
+                    return
 
-                for box in self.box_list:    
-                    if LabelEnum.MID_PRIORTY in box["labels"] and LabelEnum.HEAVY in box["labels"]:
-                        output.set_value(box["color"])
-                        print("----CalcColor: ", box["color"])
-                        self.output_color = box["color"]
-                        self.properties = box["labels"]
-                        self.current_box = box
-                        return
+            for box in self.box_list:    
+                if LabelEnum.LOW_PRIORTY in box["labels"] and LabelEnum.LIGHT in box["labels"]:
+                    output.set_value(box["color"])
+                    print("----CalcColor: ", box["color"])
+                    self.output_color = box["color"]
+                    self.properties = box["labels"]
+                    self.current_box = box
+                    return
 
-                for box in self.box_list:    
-                    if LabelEnum.MID_PRIORTY in box["labels"] and LabelEnum.LIGHT in box["labels"]:
-                        output.set_value(box["color"])
-                        print("----CalcColor: ", box["color"])
-                        self.output_color = box["color"]
-                        self.properties = box["labels"]
-                        self.current_box = box
-                        return
+            for box in self.box_list:    
+                if LabelEnum.MID_PRIORTY in box["labels"] and LabelEnum.HEAVY in box["labels"]:
+                    output.set_value(box["color"])
+                    print("----CalcColor: ", box["color"])
+                    self.output_color = box["color"]
+                    self.properties = box["labels"]
+                    self.current_box = box
+                    return
 
-                for box in self.box_list:    
-                    if LabelEnum.HIGH_PRIORTY in box["labels"] and LabelEnum.HEAVY in box["labels"]:
-                        output.set_value(box["color"])
-                        print("----CalcColor: ", box["color"])
-                        self.output_color = box["color"]
-                        self.properties = box["labels"]
-                        self.current_box = box
-                        return
+            for box in self.box_list:    
+                if LabelEnum.MID_PRIORTY in box["labels"] and LabelEnum.LIGHT in box["labels"]:
+                    output.set_value(box["color"])
+                    print("----CalcColor: ", box["color"])
+                    self.output_color = box["color"]
+                    self.properties = box["labels"]
+                    self.current_box = box
+                    return
 
-                for box in self.box_list:    
-                    if LabelEnum.HIGH_PRIORTY in box["labels"] and LabelEnum.LIGHT in box["labels"]:
-                        output.set_value(box["color"])
-                        print("----CalcColor: ", box["color"])
-                        self.output_color = box["color"]
-                        self.properties = box["labels"]
-                        self.current_box = box
-                        return
+            for box in self.box_list:    
+                if LabelEnum.HIGH_PRIORTY in box["labels"] and LabelEnum.HEAVY in box["labels"]:
+                    output.set_value(box["color"])
+                    print("----CalcColor: ", box["color"])
+                    self.output_color = box["color"]
+                    self.properties = box["labels"]
+                    self.current_box = box
+                    return
+
+            for box in self.box_list:    
+                if LabelEnum.HIGH_PRIORTY in box["labels"] and LabelEnum.LIGHT in box["labels"]:
+                    output.set_value(box["color"])
+                    print("----CalcColor: ", box["color"])
+                    self.output_color = box["color"]
+                    self.properties = box["labels"]
+                    self.current_box = box
+                    return
     
-        elif mode == PlannerState.SHUFFLE_BOXES:
-            print("----------------INSIDE CALCCOLOR SHUFFLEBOXES")
-            color = self.CalcGraspColor()
-            output.set_value(color)
-            return
+    
         return
         
 
@@ -192,7 +194,7 @@ class Planner(LeafSystem):
         if mode == PlannerState.WAIT_FOR_OBJECTS_TO_SETTLE:
             print("UPDATE: FIRST WFOTS STATE")
             if context.get_time() - times["initial"] > 1.0:
-                self.GoHome(context, state)
+                #self.GoHome(context, state)
                 self.Plan(context, state)
             return
         elif mode == PlannerState.GO_HOME:
@@ -201,7 +203,6 @@ class Planner(LeafSystem):
                 int(self._traj_q_index)
             ).get_value()
             if not traj_q.is_time_in_range(current_time):
-                self.GoHome(context, state)
                 self.Plan(context, state)
             return
 
@@ -222,7 +223,7 @@ class Planner(LeafSystem):
                 attempts = state.get_mutable_discrete_state(
                     int(self._attempts_index)
                 ).get_mutable_value()
-                if attempts[0] > 5:
+                if attempts[0] > 3:
                     # If I've failed 5 times in a row, then switch bins.
                     print(
                         "Switching to the other bin after 5 consecutive failed attempts"
@@ -232,15 +233,14 @@ class Planner(LeafSystem):
                         state.get_mutable_abstract_state(
                             int(self._mode_index)
                         ).set_value(PlannerState.SHUFFLE_BOXES)
-                        self.GoHome(context, state)
                         self.Plan(context, state)
                         
                     elif mode == PlannerState.SHUFFLE_BOXES:
                         state.get_mutable_abstract_state(
                             int(self._mode_index)
                         ).set_value(PlannerState.PICKING_BOX)
-                        self.GoHome(context, state)
                         self.Plan(context, state)
+                        #self.Plan(context, state)
                     # TODO What if the system is in another state?
                     return
 
@@ -269,7 +269,7 @@ class Planner(LeafSystem):
         ).get_value()
         if not traj_X_G.is_time_in_range(current_time):
             self.GoHome(context, state)
-            self.Plan(context, state)
+            #self.Plan(context, state)
             return
 
         X_G = self.get_input_port(0).Eval(context)[ #TODO
@@ -291,14 +291,14 @@ class Planner(LeafSystem):
             self.GoHome(context, state)
             return
 
-        print("Mode: ", mode)
+        """print("Mode: ", mode)
         print("Current box: ", self.current_box)
         print("Current Time: ", current_time)
-        print("End Time: ", times["preplace"])
+        print("End Time: ", times["preplace"])"""
         if mode == PlannerState.PICKING_BOX and np.linalg.norm(traj_X_G.GetPose(times["preplace"]).translation()- X_G.translation()) < 0.2 and self.current_box in self.box_list:
-                    print("INSIDE BOX POP")
-                    tmp_box = self.box_list.pop(self.box_list.index(self.current_box))
-                    self.truck_box_list.append(tmp_box)
+            print("INSIDE BOX POP")
+            tmp_box = self.box_list.pop(self.box_list.index(self.current_box))
+            self.truck_box_list.append(tmp_box)
 
 
 
@@ -311,7 +311,7 @@ class Planner(LeafSystem):
         q = self.get_input_port(self._iiwa_position_index).Eval(context)
         #q = [0,0,0, 0.0, 0.1, 0, -1.2, 0, 1.6, 0] # TODO change according to the run
         q0 = copy(context.get_discrete_state(self._q0_index).get_value())
-        q0[3] = q[3]  # Safer to not reset the first joint.
+        #q0[3] = q[3]  # Safer to not reset the first joint.
         print(q)
         print(q0)
         current_time = context.get_time()
@@ -338,13 +338,14 @@ class Planner(LeafSystem):
         cost = np.inf
         for i in range(5):
             if mode == PlannerState.SHUFFLE_BOXES:
-                cost, X_G["pick"] = self.GetInputPort("grasp").Eval(context)
+                cost, X_G["pick"] = self.GetInputPort("grasp_shuffle").Eval(context)
+                print("PLAN: SHUFFLEBOX")
                 if np.isinf(cost):
                     mode = PlannerState.PICKING_BOX
             
             else:
-                print("---------->X_G", self.GetInputPort("grasp").Eval(context))
                 cost, X_G["pick"] = self.GetInputPort("grasp").Eval(context)
+                print("PLAN: PICKINGBOX")
                 if np.isinf(cost):
                     mode = PlannerState.SHUFFLE_BOXES
                 else:
@@ -358,6 +359,8 @@ class Planner(LeafSystem):
                 mode = PlannerState.PICKING_BOX
             elif mode == PlannerState.PICKING_BOX:
                 mode = PlannerState.SHUFFLE_BOXES"""
+        
+        
 
         state.get_mutable_abstract_state(int(self._mode_index)).set_value(mode)
 
@@ -401,12 +404,6 @@ class Planner(LeafSystem):
         state.get_mutable_abstract_state(int(self._times_index)).set_value(
             times
         )
-
-        if False:  
-            AddMeshcatTriad(meshcat, "initial", X_PT=["initial"])
-            AddMeshcatTriad(meshcat, "X_Gprepick", X_PT=X_G["prepick"])
-            AddMeshcatTriad(meshcat, "X_Gpick", X_PT=X_G["pick"])
-            AddMeshcatTriad(meshcat, "X_Gplace", X_PT=X_G["place"])
         
         traj_X_G = MakeGripperPoseTrajectory(X_G, times)
         traj_wsg_command = MakeGripperCommandTrajectory(times)
@@ -483,7 +480,7 @@ class Planner(LeafSystem):
         mode = context.get_abstract_state(int(self._mode_index)).get_value()
         
         if mode == PlannerState.GO_HOME:
-            print("CALCCONTROLMODE: ", mode)
+            
             output.set_value(InputPortIndex(2))  # Go Home
         else:
             output.set_value(InputPortIndex(1))  # Diff IK
@@ -491,7 +488,7 @@ class Planner(LeafSystem):
     def CalcDiffIKReset(self, context, output):
         mode = context.get_abstract_state(int(self._mode_index)).get_value()
         if mode == PlannerState.GO_HOME:
-            print("CALCDIFFIKRESET: ", mode)
+            
             output.set_value(True)
         else:
             output.set_value(False)
@@ -499,7 +496,7 @@ class Planner(LeafSystem):
     def Initialize(self, context, discrete_state):
         discrete_state.set_value(
             int(self._q0_index),
-            self.get_input_port(int(self._iiwa_position_index)).Eval(context),
+            [0,0,0, -1.57, 0.1, 0, -1.2, 0, 1.6, 0],
         )
 
     def CalcIiwaPosition(self, context, output):

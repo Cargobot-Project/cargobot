@@ -107,6 +107,16 @@ class WarehouseSceneSystem:
             )
         )
 
+        self.grasp_selector_shuffle = self.builder.AddSystem(
+            GraspSelector(
+                self.plant,
+                self.plant.GetModelInstanceByName("table_top"),
+                len(self.cameras),
+                self.segmentation_model,
+                meshcat=self.meshcat
+            )
+        )
+
         self.planner = self.wire_ports(given_boxes)
 
         self.visualizer = MeshcatVisualizer.AddToBuilder(
@@ -116,9 +126,11 @@ class WarehouseSceneSystem:
         self.diagram.set_name(name)
         self.context = self.diagram.CreateDefaultContext()
         gs_context = self.grasp_selector.GetMyMutableContextFromRoot(self.context)
-        
+        gss_context = self.grasp_selector_shuffle.GetMyMutableContextFromRoot(self.context)
+
         for i, camera in enumerate(self.cameras):
             self.grasp_selector.GetInputPort(f"cam_info_{i}").FixValue(gs_context, camera.depth_camera_info())
+            self.grasp_selector_shuffle.GetInputPort(f"cam_info_{i}").FixValue(gss_context, camera.depth_camera_info())
             
         #self.grasp_selector.set_cam_contexts([self.cameras[i].GetMyMutableContextFromRoot(self.context) for i in range(len(self.cameras))])
         self.grasp_selector.set_context( gs_context)
@@ -164,6 +176,21 @@ class WarehouseSceneSystem:
                 camera.body_pose_in_world_output_port(),
                 self.grasp_selector.GetInputPort(f"X_WC_{i}")
             )
+
+            self.builder.Connect(
+                camera.color_image_output_port(),
+                self.grasp_selector_shuffle.GetInputPort(f"rgb_im_{i}")
+            )
+            
+            self.builder.Connect(
+                camera.depth_image_32F_output_port(),
+                self.grasp_selector_shuffle.GetInputPort(f"depth_im_{i}")
+            )
+
+            self.builder.Connect(
+                camera.body_pose_in_world_output_port(),
+                self.grasp_selector_shuffle.GetInputPort(f"X_WC_{i}")
+            )
         
         # Planner and Grasp Selector Bindings
         box_list = given_boxes
@@ -175,9 +202,20 @@ class WarehouseSceneSystem:
         )
 
         self.builder.Connect(
+            planner.GetOutputPort("color_shuffle"),
+            self.grasp_selector_shuffle.GetInputPort("color")
+        )
+
+        self.builder.Connect(
             self.grasp_selector.get_output_port(),
             planner.GetInputPort("grasp"),
         )
+
+        self.builder.Connect(
+            self.grasp_selector_shuffle.get_output_port(),
+            planner.GetInputPort("grasp_shuffle"),
+        )
+
         # we only use wsg's pose :3
         self.builder.Connect(
             self.station.GetOutputPort("body_poses"),

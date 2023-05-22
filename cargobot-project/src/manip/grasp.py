@@ -339,7 +339,7 @@ class GraspSelector(LeafSystem):
             if np.isfinite(cost) and cost < min_cost:
                 min_cost = cost
                 best_X_G = X_G
-        
+
         output.set_value((min_cost, best_X_G))
         
     def set_cam_contexts(self, cam_contexts):

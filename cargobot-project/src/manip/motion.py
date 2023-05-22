@@ -116,7 +116,7 @@ class Planner(LeafSystem):
     def CalcShuffleColor(self, context, output):
         color_list = np.array([BoxColorEnum.RED,BoxColorEnum.BLUE,BoxColorEnum.GREEN,BoxColorEnum.MAGENTA, BoxColorEnum.YELLOW])
         choice = self.output_color
-        while choice == self.output_color or choice in self.truck_box_list:
+        while choice == self.output_color or choice in self.truck_box_list or choice not in self.box_list:
             choice = np.random.choice(color_list, replace=False, size=1)
         print(choice)
         self.color_shuffle = choice
@@ -379,7 +379,7 @@ class Planner(LeafSystem):
             if LabelEnum.HEAVY in self.properties:
                 z = 0.3
             elif LabelEnum.LIGHT in self.properties:
-                z = 0.5
+                z = 0.4
 
             # Place in truck:
             X_G["place"] = RigidTransform(RollPitchYaw(-np.pi / 2, 0, 0), [x,0,z])

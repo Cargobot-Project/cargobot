@@ -76,7 +76,7 @@ def run_demo(box_list):
     num_of_boxes = len(box_list)
     grid = [f"{x},0" for x in range(dimension)]
     grid = grid + [f"{x},{dimension-1}" for x in range(dimension)]
-    grid = grid + [f"{dimension-1},{x}" for x in range(dimension)]
+    grid = grid + [f"{dimension-1},{x+1}" for x in range(dimension-2)]
     print(grid)
     box_positions = np.random.choice(grid, replace=False, size=num_of_boxes)
     print(box_positions)
@@ -88,7 +88,7 @@ def run_demo(box_list):
         random_z = np.random.uniform(0, 2*np.pi)
         tf = RigidTransform(
             RotationMatrix(RollPitchYaw(0,0,random_z)),
-            [1/dimension*(int(box_positions[i].split(",")[0]))+0.2, 1/dimension*(int(box_positions[i].split(",")[1])-dimension/2), z]
+            [1.5/dimension*(int(box_positions[i].split(",")[0]))+0.2, 1.5/dimension*(int(box_positions[i].split(",")[1])-dimension/2), z]
         )
         wh.plant.SetFreeBodyPose(plant_context, wh.plant.get_body(body_index), tf)
         i += 1
@@ -96,13 +96,13 @@ def run_demo(box_list):
     rgb_ims = wh.get_rgb_ims()
 
     # Make prediction from all cameras
-    print("Run inference on camera 0...")
+    """print("Run inference on camera 0...")
     object_idx = 1
     predictions = get_predictions(model, rgb_ims)
     for i in range(len(rgb_ims)):
         #print("Camera", i)
         plot_camera_view(rgb_ims, i, f"./out/camera{i}.png")
-    plot_predictions(predictions, object_idx, f"./out/")
+    plot_predictions(predictions, object_idx, f"./out/")"""
 
     simulator.Initialize()
     """pcd = wh.get_pC()
@@ -115,7 +115,8 @@ def run_demo(box_list):
     visualizer.StartRecording(True)
     
     return simulator, meshcat, visualizer
-x = 0.08
+
+"""x = 0.08
 box_list = [{'id': 0, 'dimensions': (f'{x}', f'{x}', f'{2*x}'), 'labels': (LabelEnum.HEAVY, LabelEnum.LOW_PRIORTY), 'color': BoxColorEnum.BLUE},
             {'id': 1, 'dimensions': (f'{x}', f'{x}', f'{2*x}'), 'labels': (LabelEnum.LIGHT, LabelEnum.LOW_PRIORTY), 'color': BoxColorEnum.GREEN},
             {'id': 2, 'dimensions': (f'{x}', f'{x}', f'{x}'), 'labels': (LabelEnum.HEAVY, LabelEnum.MID_PRIORTY), 'color': BoxColorEnum.YELLOW},
@@ -124,4 +125,4 @@ simulator, meshcat, visualizer = run_demo(box_list)
 meshcat.AddButton("Stop Simulation", "Escape")
 while meshcat.GetButtonClicks("Stop Simulation") < 1:
     simulator.AdvanceTo(simulator.get_context().get_time() + 2.0)
-visualizer.PublishRecording()
+visualizer.PublishRecording()"""

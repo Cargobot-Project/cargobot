@@ -216,7 +216,7 @@ class Planner(LeafSystem):
         # we've missed or dropped the object.  Time to replan.
         if (
             current_time > times["postpick"]
-            and current_time < times["preplace"]
+            and current_time + 4 < times["preplace"]
         ):
             self.second_mode = 1
             wsg_state = self.get_input_port(self._wsg_state_index).Eval(
@@ -409,7 +409,7 @@ class Planner(LeafSystem):
             box_positions = np.random.choice(grid, replace=False, size=1)
             tf = RigidTransform(
                         RotationMatrix(),
-                        [0.15*(int(box_positions[0].split(",")[0])-dimension/2)+0.7, 0.15*(int(box_positions[0].split(",")[1])-dimension/2)-0.1, 0.1])
+                        [0.15*(int(box_positions[0].split(",")[0])-dimension/2)+0.7, 0.15*(int(box_positions[0].split(",")[1])-dimension/2)-0.1, 0.3])
             # Place in pickup area:
             X_G["place"] = tf
         

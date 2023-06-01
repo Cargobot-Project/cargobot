@@ -75,8 +75,10 @@ def GraspCandidateCost(
     p_GC = X_GW @ cloud.xyzs()
 
     # Crop to a region inside of the finger box.
-    crop_min = [0, -1, 0.03]
-    crop_max = [1.8, 1, 0.17]
+    """crop_min = [0, -1, 0.07]
+    crop_max = [1.8, 1, 0.17]"""
+    crop_min = [-0.05, 0.1, -0.00625]
+    crop_max = [0.05, 0.1125, 0.00625]
     indices = np.all(
         (
             crop_min[0] <= p_GC[0, :],
@@ -274,10 +276,7 @@ class GraspSelector(LeafSystem):
         bin_body = plant.GetBodyByName("table_top_link", bin_instance)
         X_B = plant.EvalBodyPoseInWorld(self.context, bin_body)
         margin = 0.001  # only because simulation is perfect!
-        """a = X_B.multiply(
-            [-0.22 + 0.025 + margin, -0.29 + 0.025 + margin, 0.015 + margin]
-        )
-        b = X_B.multiply([0.22 - 0.1 - margin, 0.29 - 0.025 - margin, 2.0])"""
+    
 
         self._crop_lower =  [-1, 0, 0.025]
         self._crop_upper =  [1, 1, 0.17]

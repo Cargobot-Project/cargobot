@@ -92,7 +92,7 @@ def vis_normals(normals, meshcat):
         time.sleep(1)
     """
         
-DEFAULT_MASK_THRESHOLD = 160
+DEFAULT_MASK_THRESHOLD = 155
 
 def get_merged_masked_pcd(predictions, rgb_ims, depth_ims, project_depth_to_pC_func, X_WCs, cam_infos, color: BoxColorEnum, meshcat=None, 
                             mask_threshold=DEFAULT_MASK_THRESHOLD, score_threshold=0.6):
@@ -106,8 +106,8 @@ def get_merged_masked_pcd(predictions, rgb_ims, depth_ims, project_depth_to_pC_f
     """
 
     pcd = []
-    crop_min = RigidTransform().multiply(np.array([0.2, -1.5, 0.005]))
-    crop_max = RigidTransform().multiply(np.array([2, 1.5, 0.55]))
+    crop_min = RigidTransform().multiply(np.array([0.2, -1, 0.05]))
+    crop_max = RigidTransform().multiply(np.array([2, 1, 0.25]))
     avg = 0
     i = 0
     for prediction, rgb_im, depth_im, X_WC, cam_info in \
@@ -189,6 +189,7 @@ def get_merged_masked_pcd(predictions, rgb_ims, depth_ims, project_depth_to_pC_f
         
         N = spatial_points.shape[1]
         pcd.append(PointCloud(N, Fields(BaseField.kXYZs | BaseField.kRGBs)))
+   
         pcd[-1].mutable_xyzs()[:] = spatial_points
         pcd[-1].mutable_rgbs()[:] = rgb_points
         pcd[-1].EstimateNormals(radius=0.1, num_closest=30)

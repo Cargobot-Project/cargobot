@@ -13,10 +13,10 @@ from pydrake.all import ModelInstanceIndex, RgbdSensor, DepthImageToPointCloud, 
     RigidTransform(RollPitchYaw(np.pi-np.arctan(1.5*sqrt(2)), 0,  +np.arctan(1)), [-0.5, 1.5, 1])"""
 
 CARGOBOT_CAMERA_POSES = [
-    RigidTransform(RollPitchYaw(-np.pi+np.arctan(3*sqrt(2)), 0,  np.arctan(1)), [2.5, -1.5, 0.5]),
-    RigidTransform(RollPitchYaw(np.pi-np.arctan(3*sqrt(2)), 0,  -np.arctan(1)), [2.5, 1.5, 0.5]),
-    RigidTransform(RollPitchYaw(-np.pi+np.arctan(3*sqrt(2)), 0,  -np.arctan(1)), [-0.5, -1.5, 0.5]),
-    RigidTransform(RollPitchYaw(np.pi-np.arctan(3*sqrt(2)), 0,  +np.arctan(1)), [-0.5, 1.5, 0.5])
+    RigidTransform(RollPitchYaw(-np.pi+np.arctan(3*sqrt(2))+0.04, 0,  np.arctan(1)), [2.5, -1.5, 0.5]),
+    RigidTransform(RollPitchYaw(np.pi-np.arctan(3*sqrt(2))-0.04, 0,  -np.arctan(1)), [2.5, 1.5, 0.5]),
+    RigidTransform(RollPitchYaw(-np.pi+np.arctan(3*sqrt(2))+0.04, 0,  -np.arctan(1)), [-0.5, -1.5, 0.5]),
+    RigidTransform(RollPitchYaw(np.pi-np.arctan(3*sqrt(2))-0.04, 0,  +np.arctan(1)), [-0.5, 1.5, 0.5])
 ]
 
 # Custom version of manipulation library's AddRgbdSensors()

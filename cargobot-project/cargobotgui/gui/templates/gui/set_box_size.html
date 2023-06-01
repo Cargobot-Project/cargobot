@@ -1,17 +1,17 @@
-<div>
+<div style="text-align: center; margin-top: 20px;">
     <div>
         <form method="post" action="{% url 'process_box_size' %}">
             {% csrf_token %}
             {% for box in box_container %}
-            <label for="box_height_{{ box.id }}">Enter box {{ box.id }}'s height</label>
-            <input type="number" step="any" name="box_height_{{ box.id }}" id="box_height_{{ box.id }}">
-            <label for="box_height_{{ box.id }}">Enter box {{ box.id }}'s width</label>
-            <input type="number" step="any" name="box_width_{{ box.id }}" id="box_width_{{ box.id }}">
-            <label for="box_height_{{ box.id }}">Enter box {{ box.id }}'s depth</label>
-            <input type="number" step="any" name="box_depth_{{ box.id }}" id="box_depth_{{ box.id }}">
+            <label for="box_height_{{ box.id }}" style="display: block; margin-bottom: 5px;">Enter box {{ box.id }}'s height</label>
+            <input type="number" step="any" name="box_height_{{ box.id }}" id="box_height_{{ box.id }}" style="padding: 5px; width: 150px;">
+            <label for="box_width_{{ box.id }}" style="display: block; margin-bottom: 5px;">Enter box {{ box.id }}'s width</label>
+            <input type="number" step="any" name="box_width_{{ box.id }}" id="box_width_{{ box.id }}" style="padding: 5px; width: 150px;">
+            <label for="box_depth_{{ box.id }}" style="display: block; margin-bottom: 10px;">Enter box {{ box.id }}'s depth</label>
+            <input type="number" step="any" name="box_depth_{{ box.id }}" id="box_depth_{{ box.id }}" style="padding: 5px; width: 150px;">
             <br>
             {% endfor %}
-            <button type="submit">Set labels to boxes</button>
+            <button type="submit" style="padding: 10px 20px; background-color: #4CAF50; color: white; border: none; cursor: pointer;">Set labels to boxes</button>
         </form>
     </div>
 </div>

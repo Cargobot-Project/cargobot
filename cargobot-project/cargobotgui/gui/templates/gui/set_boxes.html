@@ -1,8 +1,10 @@
-<div>
+<div style="text-align: center; margin-top: 20px;">
     <form method="post">
         {% csrf_token %}
-        <label for="num_boxes">Number of boxes:</label>
-        <input type="number" name="num_boxes" id="num_boxes">
-        <button type="submit">Assign Dimensions to Boxes</button>
+        <label for="num_boxes" style="display: block; margin-bottom: 10px;">Number of boxes:</label>
+        <input type="number" name="num_boxes" id="num_boxes" style="padding: 5px; width: 150px;">
+        <br>
+        <br>
+        <button type="submit" style="padding: 10px 20px; background-color: hsl(267, 39%, 49%); color: white; border: none; cursor: pointer;">Assign Dimensions to Boxes</button>
     </form>
 </div>

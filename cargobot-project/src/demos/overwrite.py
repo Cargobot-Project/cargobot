@@ -1,3 +1,5 @@
+import sys
+sys.path.append("/usr/cargobot/cargobot-project/src/")
 import numpy as np
 import time
 import sys, os

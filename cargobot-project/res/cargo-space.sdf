@@ -21,84 +21,85 @@
           <izz>1.2</izz>
         </inertia>
       </inertial>
-      <visual name="visual">
+      <visual name="front">
         <pose>0.75 0 0.105 0 0 0</pose>
         <geometry>
           <box>
-            <size>0.05 1.5 1.5</size>
+            <size>0.05 2 2</size>
           </box>
         </geometry>
+    
       </visual>
       <collision name="front">
         <pose>0.75 0 0.105 0 0 0</pose>
         <geometry>
           <box>
-            <size>0.05 1.5 1.5</size>
+            <size>0.05 2 2</size>
           </box>
         </geometry>
       </collision>
      
       <visual name="back">
-        <pose>-0.75 0 0.105 0 0 0</pose>
+        <pose>-1 0 0.105 0 0 0</pose>
         <geometry>
           <box>
-            <size>0.05 1.5 1.5</size>
+            <size>0.05 2 2</size>
           </box>
         </geometry>
       </visual>
       <collision name="back">
-        <pose>-0.75 0 0.105 0 0 0</pose>
+        <pose>-1 0 0.105 0 0 0</pose>
         <geometry>
           <box>
-            <size>0.05 1.5 1.5</size>
+            <size>0.05 2 2</size>
           </box>
         </geometry>
       </collision>
       <visual name="left">
-        <pose>0 0.75 0.105 0 0 0</pose>
+        <pose>0 1 0.105 0 0 0</pose>
         <geometry>
           <box>
-            <size>1.5 0.05 1.5</size>
+            <size>2 0.05 2</size>
           </box>
         </geometry>
       </visual>
       <collision name="left">
-        <pose>0 0.75 0.105 0 0 0</pose>
+        <pose>0 1 0.105 0 0 0</pose>
         <geometry>
           <box>
-            <size>1.5 0.05 1.5</size>
+            <size>2 0.05 2</size>
           </box>
         </geometry>
       </collision>
       <visual name="right">
-        <pose>0 -0.75 0.105 0 0 0</pose>
+        <pose>0 -1 0.105 0 0 0</pose>
         <geometry>
           <box>
-            <size>1.5 0.05 1.5</size>
+            <size>2 0.05 2</size>
           </box>
         </geometry>
       </visual>
       <collision name="right">
-        <pose>0 -0.75 0.105 0 0 0</pose>
+        <pose>0 -1 0.105 0 0 0</pose>
         <geometry>
           <box>
-            <size>1.5 0.05 1.5</size>
+            <size>2 0.05 2</size>
           </box>
         </geometry>
       </collision>
       <visual name="bottom">
-        <pose>0.0 0.0 -0.50 0 0 0</pose>
+        <pose>0.0 0.0 -0.9 0 0 0</pose>
         <geometry>
           <box>
-            <size>1.5 1.5 0.010</size>
+            <size>2 2 0.010</size>
           </box>
         </geometry>
       </visual>
       <collision name="bottom">
-        <pose>0.0 0.0 -0.50 0 0 0</pose>
+        <pose>0.0 0.0 -0.9 0 0 0</pose>
         <geometry>
           <box>
-            <size>1.5 1.5 0.010</size>
+            <size>2 2 0.010</size>
           </box>
         </geometry>
       </collision>

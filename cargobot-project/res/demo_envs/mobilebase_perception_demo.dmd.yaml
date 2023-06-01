@@ -1,4 +1,12 @@
-directives:          
+directives:  
+    - add_model: 
+        name: walls
+        file: file:///usr/cargobot/cargobot-project/res/demo_envs/walls.sdf     
+    
+    - add_weld: 
+        parent: world
+        child: walls
+
     - add_model:
         name: cargo-space
         file: file:///usr/cargobot/cargobot-project/res/cargo-space.sdf
@@ -8,7 +16,7 @@ directives:
         child: cargo-space::cargo-space
         X_PC:
             rotation: !Rpy { deg: [0, 90, 0 ]}
-            translation: [-1.5, 0, 0.4]
+            translation: [-2, 0, 0.72]
 
     - add_frame: 
         name: table_top_center

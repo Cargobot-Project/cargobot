@@ -164,6 +164,7 @@ def get_merged_masked_pcd(predictions, rgb_ims, depth_ims, project_depth_to_pC_f
         rgb_points = np.dstack([rgb_im])
         rgb_points = rgb_points[mask_uvs]
         rgb_points = rgb_points.reshape([-1, 3])
+        print(rgb_points)
         
         spatial_points = spatial_points.T
         rgb_points = rgb_points.T

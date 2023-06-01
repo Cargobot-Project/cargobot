@@ -114,9 +114,9 @@ class Planner(LeafSystem):
         self.current_box = self.box_list[0]
 
     def CalcShuffleColor(self, context, output):
-        color_list = np.array([BoxColorEnum.RED,BoxColorEnum.BLUE,BoxColorEnum.GREEN,BoxColorEnum.MAGENTA, BoxColorEnum.YELLOW])
+        color_list = np.array([BoxColorEnum.BLUE,BoxColorEnum.GREEN,BoxColorEnum.MAGENTA, BoxColorEnum.YELLOW])
         choice = self.output_color
-        while choice == self.output_color or choice in self.truck_box_list or choice not in self.box_list:
+        while choice == self.output_color or choice in self.truck_box_list:
             choice = np.random.choice(color_list, replace=False, size=1)
         print(choice)
         self.color_shuffle = choice
@@ -194,7 +194,6 @@ class Planner(LeafSystem):
         if mode == PlannerState.WAIT_FOR_OBJECTS_TO_SETTLE:
             print("UPDATE: FIRST WFOTS STATE")
             if context.get_time() - times["initial"] > 1.0:
-                #self.GoHome(context, state)
                 self.Plan(context, state)
             return
         elif mode == PlannerState.GO_HOME:
@@ -218,11 +217,14 @@ class Planner(LeafSystem):
             )
             if wsg_state[0] < 0.01: # closed gripper
                 print("UPDATE: DROPPED THE BOX - OR COULD NOT GRASP")
+                
                 if self.current_box not in self.box_list:
                     self.box_list.append(self.current_box)
                 attempts = state.get_mutable_discrete_state(
                     int(self._attempts_index)
                 ).get_mutable_value()
+                
+                
                 if attempts[0] > 3:
                     # If I've failed 5 times in a row, then switch bins.
                     print(
@@ -268,7 +270,7 @@ class Planner(LeafSystem):
             int(self._traj_X_G_index)
         ).get_value()
         if not traj_X_G.is_time_in_range(current_time):
-            self.GoHome(context, state)
+            self.GoHome(context, state, None)
             #self.Plan(context, state)
             return
 
@@ -288,7 +290,7 @@ class Planner(LeafSystem):
             # If my trajectory tracking has gone this wrong, then I'd better
             # stop and replan.  TODO(russt): Go home, in joint coordinates,
             # instead.
-            self.GoHome(context, state)
+            self.GoHome(context, state, None)
             return
 
         """print("Mode: ", mode)
@@ -303,17 +305,20 @@ class Planner(LeafSystem):
 
 
     
-    def GoHome(self, context, state):
+    def GoHome(self, context, state, from_dropped):
         print("GO HOME.")
         state.get_mutable_abstract_state(int(self._mode_index)).set_value(
             PlannerState.GO_HOME
         )
+        if from_dropped:
+            state.get_mutable_abstract_state(int(self._mode_index)).set_value(
+                from_dropped
+            )
         q = self.get_input_port(self._iiwa_position_index).Eval(context)
         #q = [0,0,0, 0.0, 0.1, 0, -1.2, 0, 1.6, 0] # TODO change according to the run
         q0 = copy(context.get_discrete_state(self._q0_index).get_value())
         #q0[3] = q[3]  # Safer to not reset the first joint.
-        print(q)
-        print(q0)
+        
         current_time = context.get_time()
         q_traj = PiecewisePolynomial.FirstOrderHold(
             [current_time, current_time + 10.0], np.vstack((q, q0)).T

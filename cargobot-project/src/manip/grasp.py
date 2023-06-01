@@ -75,8 +75,8 @@ def GraspCandidateCost(
     p_GC = X_GW @ cloud.xyzs()
 
     # Crop to a region inside of the finger box.
-    crop_min = [-3, -3, -0.00625]
-    crop_max = [3, 3, 0.00625]
+    crop_min = [-3, -3, 0.02]
+    crop_max = [3, 3, 0.17]
     indices = np.all(
         (
             crop_min[0] <= p_GC[0, :],
@@ -170,7 +170,7 @@ def GenerateAntipodalGraspCandidate(
     Gz = np.cross(Gx, Gy)
     R_WG = RotationMatrix(np.vstack((Gx, Gy, Gz)).T)
     #p_GS_G = [0.054 - 0.01, 0.10625, 0]
-    p_GS_G = [0.054,  0.1, 0.01]
+    p_GS_G = [0.054,  0.1, 0]
 
     # Try orientations from the center out
     min_roll = -np.pi / 3.0

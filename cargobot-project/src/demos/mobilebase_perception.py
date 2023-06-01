@@ -88,8 +88,9 @@ def run_demo(box_list):
         random_z = np.random.uniform(0, 2*np.pi)
         tf = RigidTransform(
             RotationMatrix(RollPitchYaw(0,0,random_z)),
-            [1.5/dimension*(int(box_positions[i].split(",")[0]))+0.4, 1.5/dimension*(int(box_positions[i].split(",")[1])-dimension/2), z]
+            [1.1/dimension*(int(box_positions[i].split(",")[0]))+0.6, 1.1/dimension*(int(box_positions[i].split(",")[1])-dimension/2), z]
         )
+        print([1.1/dimension*(int(box_positions[i].split(",")[0]))+0.6, 1.1/dimension*(int(box_positions[i].split(",")[1])-dimension/2), z])
         wh.plant.SetFreeBodyPose(plant_context, wh.plant.get_body(body_index), tf)
         i += 1
     
@@ -116,14 +117,15 @@ def run_demo(box_list):
     
     return simulator, meshcat, visualizer
 
-"""x = 0.1
+x = 0.08
 box_list = [{'id': 0, 'dimensions': (f'{x}', f'{x}', f'{2*x}'), 'labels': (LabelEnum.HEAVY, LabelEnum.LOW_PRIORTY), 'color': BoxColorEnum.BLUE},
             {'id': 1, 'dimensions': (f'{x}', f'{x}', f'{2*x}'), 'labels': (LabelEnum.LIGHT, LabelEnum.LOW_PRIORTY), 'color': BoxColorEnum.GREEN},
             {'id': 2, 'dimensions': (f'{x}', f'{x}', f'{2*x}'), 'labels': (LabelEnum.HEAVY, LabelEnum.MID_PRIORTY), 'color': BoxColorEnum.YELLOW},
-            {'id': 3, 'dimensions': (f'{x}', f'{x}', f'{2*x}'), 'labels': (LabelEnum.HEAVY, LabelEnum.HIGH_PRIORTY), 'color': BoxColorEnum.MAGENTA}]
+            {'id': 3, 'dimensions': (f'{x}', f'{x}', f'{2*x}'), 'labels': (LabelEnum.HEAVY, LabelEnum.HIGH_PRIORTY), 'color': BoxColorEnum.MAGENTA},
+            {'id': 4, 'dimensions': (f'{x}', f'{x}', f'{2*x}'), 'labels': (LabelEnum.HEAVY, LabelEnum.LOW_PRIORTY), 'color': BoxColorEnum.BLUE}]
 #box_list = [{'id': 0, 'dimensions': (f'{x}', f'{x}', f'{2*x}'), 'labels': (LabelEnum.HEAVY, LabelEnum.LOW_PRIORTY), 'color': BoxColorEnum.BLUE}]
 simulator, meshcat, visualizer = run_demo(box_list)
 meshcat.AddButton("Stop Simulation", "Escape")
 while meshcat.GetButtonClicks("Stop Simulation") < 1:
     simulator.AdvanceTo(simulator.get_context().get_time() + 2.0)
-visualizer.PublishRecording()"""
+visualizer.PublishRecording()

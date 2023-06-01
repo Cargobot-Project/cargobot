@@ -112,7 +112,7 @@ class Planner(LeafSystem):
         self.color_shuffle = BoxColorEnum.RED # default
         self.output_color = BoxColorEnum.RED # default
         self.current_box = self.box_list[0]
-        self.second_mode = 0
+        self.second_mode = PlannerState.WAIT_FOR_OBJECTS_TO_SETTLE
 
     def CalcShuffleColor(self, context, output):
         color_list = np.array([box["color"] for box in self.box_list])
@@ -199,10 +199,12 @@ class Planner(LeafSystem):
         if mode == PlannerState.WAIT_FOR_OBJECTS_TO_SETTLE:
             print("UPDATE: FIRST WFOTS STATE")
             if context.get_time() - times["initial"] > 1.0:
-                self.Plan(context, state)
+                if self.second_mode == PlannerState.WAIT_FOR_OBJECTS_TO_SETTLE:
+                    self.GoHome(context, state, None)
+                else:
+                    self.GoHome(context, state, self.second_mode)
             return
         elif mode == PlannerState.GO_HOME:
-            print("UPDATE: FIRST GO HOME STATE")
             traj_q = context.get_mutable_abstract_state(
                 int(self._traj_q_index)
             ).get_value()
@@ -229,11 +231,11 @@ class Planner(LeafSystem):
                     int(self._attempts_index)
                 ).get_mutable_value()
                 
-                
-                if attempts[0] > 3:
-                    # If I've failed 5 times in a row, then switch bins.
+                print("-----Attempt: ", attempts[0])
+                if attempts[0] > 2:
+                    # If I've failed 2 times in a row, then switch bins.
                     print(
-                        "Switching to the other bin after 5 consecutive failed attempts"
+                        "Switching to the other bin after 2 consecutive failed attempts"
                     )
                     attempts[0] = 0
                     if mode == PlannerState.PICKING_BOX:
@@ -256,6 +258,7 @@ class Planner(LeafSystem):
                 state.get_mutable_abstract_state(
                     int(self._mode_index)
                 ).set_value(PlannerState.WAIT_FOR_OBJECTS_TO_SETTLE)
+                self.second_mode = mode
                 times = {"initial": current_time}
                 state.get_mutable_abstract_state(
                     int(self._times_index)
@@ -316,10 +319,10 @@ class Planner(LeafSystem):
         state.get_mutable_abstract_state(int(self._mode_index)).set_value(
             PlannerState.GO_HOME
         )
-        if from_dropped:
+        """if from_dropped:
             state.get_mutable_abstract_state(int(self._mode_index)).set_value(
                 from_dropped
-            )
+            )"""
         q = self.get_input_port(self._iiwa_position_index).Eval(context)
         #q = [0,0,0, 0.0, 0.1, 0, -1.2, 0, 1.6, 0] # TODO change according to the run
         q0 = copy(context.get_discrete_state(self._q0_index).get_value())

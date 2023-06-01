@@ -75,8 +75,8 @@ def GraspCandidateCost(
     p_GC = X_GW @ cloud.xyzs()
 
     # Crop to a region inside of the finger box.
-    crop_min = [0, -3, 0.02]
-    crop_max = [3, 3, 0.17]
+    crop_min = [0, -1, 0.03]
+    crop_max = [1.8, 1, 0.17]
     indices = np.all(
         (
             crop_min[0] <= p_GC[0, :],
@@ -176,6 +176,7 @@ def GenerateAntipodalGraspCandidate(
     min_roll = -np.pi / 3.0
     max_roll = np.pi / 3.0
     alpha = np.array([0.5, 0.65, 0.35, 0.8, 0.2, 1.0, 0.0])
+    
     for theta in min_roll + (max_roll - min_roll) * alpha:
         # Rotate the object in the hand by a random rotation (around the
         # normal).
@@ -278,8 +279,8 @@ class GraspSelector(LeafSystem):
         )
         b = X_B.multiply([0.22 - 0.1 - margin, 0.29 - 0.025 - margin, 2.0])"""
 
-        self._crop_lower =  [-3, -3, 0.01]
-        self._crop_upper = [3, 3, 0.17]
+        self._crop_lower =  [-1, 0, 0.025]
+        self._crop_upper =  [1, 1, 0.17]
         
         
         self._internal_model, self._internal_plant, self._internal_scene_graph = WarehouseSceneSystem.make_internal_model()

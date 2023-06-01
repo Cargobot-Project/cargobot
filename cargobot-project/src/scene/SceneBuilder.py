@@ -1,25 +1,22 @@
 import numpy as np
 import sys
 import os
-
+from math import sqrt 
 from typing import List
 
 from pydrake.all import RigidTransform, RollPitchYaw
 from pydrake.all import MakeRenderEngineVtk, RenderEngineVtkParams, DepthRenderCamera, RenderCameraCore, CameraInfo, ClippingRange, DepthRange
 from pydrake.all import ModelInstanceIndex, RgbdSensor, DepthImageToPointCloud, BaseField, LeafSystem, AbstractValue, RotationMatrix
+"""RigidTransform(RollPitchYaw(-np.pi+np.arctan(1.5*sqrt(2)), 0,  np.arctan(1)), [2.5, -1.5, 1]),
+    RigidTransform(RollPitchYaw(np.pi-np.arctan(1.5*sqrt(2)), 0,  -np.arctan(1)), [2.5, 1.5, 1]),
+    RigidTransform(RollPitchYaw(-np.pi+np.arctan(1.5*sqrt(2)), 0,  -np.arctan(1)), [-0.5, -1.5, 1]),
+    RigidTransform(RollPitchYaw(np.pi-np.arctan(1.5*sqrt(2)), 0,  +np.arctan(1)), [-0.5, 1.5, 1])"""
 
 CARGOBOT_CAMERA_POSES = [
-    #RigidTransform(RollPitchYaw(0, -np.pi/2, 0), [1.3, 0, 1.3]),
-    #RigidTransform(RollPitchYaw(0, np.pi/2, 0), [-1.3, 0, 1.3])  
-    #RigidTransform(RollPitchYaw(9*np.pi/7, -1.40714872,  np.pi / 2.0), [2.5, -1.25, 0.3]),
-    #RigidTransform(RollPitchYaw(9*np.pi/7, 1.40714872,  np.pi / 2.0), [2.5, 1.25, 0.3]),
-    #RigidTransform(RollPitchYaw(-9*np.pi/7, -1.40714872,  np.pi / 2.0), [-0.5, -1.25, 0.3]),
-    #RigidTransform(RollPitchYaw(-9*np.pi/7, 1.40714872,  np.pi / 2.0), [-0.5, 1.25, 0.3])
-    RigidTransform(RollPitchYaw(2.8*np.pi/3, -np.pi/4,  np.pi / 2.0), [1.5, -2, 2]),
-    RigidTransform(RollPitchYaw(2.8*np.pi/3, np.pi/4,  np.pi / 2.0), [1.5, 2, 2]),
-    RigidTransform(RollPitchYaw(np.pi, -np.pi/4,  np.pi / 2.0), [0.5, -2, 2]),
-    RigidTransform(RollPitchYaw(np.pi, np.pi/4,  np.pi / 2.0), [0.5, 2, 2])
-    #RigidTransform(RollPitchYaw(np.pi, 0,  np.pi / 2.0), [0, 0, 1])
+    RigidTransform(RollPitchYaw(-np.pi+np.arctan(3*sqrt(2)), 0,  np.arctan(1)), [2.5, -1.5, 0.5]),
+    RigidTransform(RollPitchYaw(np.pi-np.arctan(3*sqrt(2)), 0,  -np.arctan(1)), [2.5, 1.5, 0.5]),
+    RigidTransform(RollPitchYaw(-np.pi+np.arctan(3*sqrt(2)), 0,  -np.arctan(1)), [-0.5, -1.5, 0.5]),
+    RigidTransform(RollPitchYaw(np.pi-np.arctan(3*sqrt(2)), 0,  +np.arctan(1)), [-0.5, 1.5, 0.5])
 ]
 
 # Custom version of manipulation library's AddRgbdSensors()

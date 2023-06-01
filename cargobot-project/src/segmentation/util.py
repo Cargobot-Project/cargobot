@@ -92,7 +92,7 @@ def vis_normals(normals, meshcat):
         time.sleep(1)
     """
         
-DEFAULT_MASK_THRESHOLD = 165
+DEFAULT_MASK_THRESHOLD = 155
 
 def get_merged_masked_pcd(predictions, rgb_ims, depth_ims, project_depth_to_pC_func, X_WCs, cam_infos, color: BoxColorEnum, meshcat=None, 
                             mask_threshold=DEFAULT_MASK_THRESHOLD, score_threshold=0.6):
@@ -106,7 +106,7 @@ def get_merged_masked_pcd(predictions, rgb_ims, depth_ims, project_depth_to_pC_f
     """
 
     pcd = []
-    crop_min = RigidTransform().multiply(np.array([0.2, -1.5, 0.05]))
+    crop_min = RigidTransform().multiply(np.array([0.2, -1.5, 0.005]))
     crop_max = RigidTransform().multiply(np.array([2, 1.5, 0.55]))
     avg = 0
     i = 0

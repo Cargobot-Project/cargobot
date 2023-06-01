@@ -11,10 +11,14 @@ from pydrake.all import ModelInstanceIndex, RgbdSensor, DepthImageToPointCloud, 
 CARGOBOT_CAMERA_POSES = [
     #RigidTransform(RollPitchYaw(0, -np.pi/2, 0), [1.3, 0, 1.3]),
     #RigidTransform(RollPitchYaw(0, np.pi/2, 0), [-1.3, 0, 1.3])  
-    RigidTransform(RollPitchYaw(9*np.pi/7, -1.40714872,  np.pi / 2.0), [2.5, -1.25, 0.3]),
-    RigidTransform(RollPitchYaw(9*np.pi/7, 1.40714872,  np.pi / 2.0), [2.5, 1.25, 0.3]),
-    RigidTransform(RollPitchYaw(-9*np.pi/7, -1.40714872,  np.pi / 2.0), [-0.5, -1.25, 0.3]),
-    RigidTransform(RollPitchYaw(-9*np.pi/7, 1.40714872,  np.pi / 2.0), [-0.5, 1.25, 0.3])
+    #RigidTransform(RollPitchYaw(9*np.pi/7, -1.40714872,  np.pi / 2.0), [2.5, -1.25, 0.3]),
+    #RigidTransform(RollPitchYaw(9*np.pi/7, 1.40714872,  np.pi / 2.0), [2.5, 1.25, 0.3]),
+    #RigidTransform(RollPitchYaw(-9*np.pi/7, -1.40714872,  np.pi / 2.0), [-0.5, -1.25, 0.3]),
+    #RigidTransform(RollPitchYaw(-9*np.pi/7, 1.40714872,  np.pi / 2.0), [-0.5, 1.25, 0.3])
+    RigidTransform(RollPitchYaw(2.8*np.pi/3, -np.pi/4,  np.pi / 2.0), [1.5, -2, 2]),
+    RigidTransform(RollPitchYaw(2.8*np.pi/3, np.pi/4,  np.pi / 2.0), [1.5, 2, 2]),
+    RigidTransform(RollPitchYaw(np.pi, -np.pi/4,  np.pi / 2.0), [0.5, -2, 2]),
+    RigidTransform(RollPitchYaw(np.pi, np.pi/4,  np.pi / 2.0), [0.5, 2, 2])
     #RigidTransform(RollPitchYaw(np.pi, 0,  np.pi / 2.0), [0, 0, 1])
 ]
 

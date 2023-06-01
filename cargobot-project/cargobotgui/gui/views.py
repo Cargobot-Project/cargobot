@@ -2,6 +2,9 @@ import sys
 sys.path.append("/usr/cargobot/cargobot-project/src/")
 import webbrowser
 
+from django.http import JsonResponse
+import threading
+
 from django.shortcuts import render,redirect
 from django.http import HttpResponse,HttpResponseRedirect
 from django.template import loader
@@ -35,6 +38,7 @@ config = "UNDONE" #kutu ve label secimi boolean valuesu
 box_container = []
 number_of_boxes = 0
 label_container = []
+box_list = None
 
 class Label:
     def __init__(self,name,priority=None,weight=None):
@@ -220,8 +224,30 @@ def set_label_priority_view(request):
             
         return redirect('assign_label_to_boxes')
 
+def meshcat_view(request):
+    global box_list
+
+    template = loader.get_template("gui/meshcat.html")
+    context = {}
+    html_content = template.render(context, request)
+
+    # Start the long-running task in a separate thread
+    threading.Thread(target=run_demo_background, args=(box_list,)).start()
+
+    # Return the HTML content immediately
+    return HttpResponse(template.render(context, request))
+
+
+def run_demo_background(box_list):
+    simulator, meshcat, visualizer = run_demo(box_list)
+    meshcat.AddButton("Stop Simulation", "Escape")
+    while meshcat.GetButtonClicks("Stop Simulation") < 1:
+        simulator.AdvanceTo(simulator.get_context().get_time() + 2.0)
+    visualizer.PublishRecording()
+
 def assign_label_to_boxes(request):
     global box_container
+    global box_list
     if request.method == 'GET':
         template = loader.get_template("gui/assign_label_to_boxes.html")
         context = {"box_container":box_container,"label_container":label_container}
@@ -234,14 +260,8 @@ def assign_label_to_boxes(request):
                     box.label = label
     box_list = box_tuple_adaptor()
     # webbrowser.open('localhost:7000/')
-    render(request, 'gui/meshcat.html')
-    simulator, meshcat, visualizer = run_demo(box_list)
-    meshcat.AddButton("Stop Simulation", "Escape")
-    while meshcat.GetButtonClicks("Stop Simulation") < 1:
-        simulator.AdvanceTo(simulator.get_context().get_time() + 2.0)
-    visualizer.PublishRecording()
     
-    return redirect('index')
+    return redirect('meshcat_view')
 
 def meshcat_opener():
     redirect_url = 'localhost:7000/'

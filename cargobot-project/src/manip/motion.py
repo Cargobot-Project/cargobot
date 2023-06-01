@@ -112,13 +112,15 @@ class Planner(LeafSystem):
         self.color_shuffle = BoxColorEnum.RED # default
         self.output_color = BoxColorEnum.RED # default
         self.current_box = self.box_list[0]
+        self.second_mode = 0
 
     def CalcShuffleColor(self, context, output):
         color_list = np.array([box["color"] for box in self.box_list])
         choice = self.output_color
-        if color_list.size == 0:
+       
+        if color_list.size == 1:
             print("NO OTHER BOX")
-            output.set_value(choice[0])
+            output.set_value(choice)
             return
 
         while choice == self.output_color or choice in self.truck_box_list:
@@ -185,8 +187,6 @@ class Planner(LeafSystem):
                     self.properties = box["labels"]
                     self.current_box = box
                     return
-    
-    
         return
         
 
@@ -216,7 +216,7 @@ class Planner(LeafSystem):
             current_time > times["postpick"]
             and current_time < times["preplace"]
         ):
-           
+            self.second_mode = 1
             wsg_state = self.get_input_port(self._wsg_state_index).Eval(
                 context
             )
@@ -249,6 +249,7 @@ class Planner(LeafSystem):
                         self.Plan(context, state)
                         #self.Plan(context, state)
                     # TODO What if the system is in another state?
+                    
                     return
 
                 attempts[0] += 1
@@ -346,16 +347,20 @@ class Planner(LeafSystem):
         }
         
         cost = np.inf
+        print("FOR PLANNING")
         for i in range(5):
+            print("FOR IN PLANNING")
             if mode == PlannerState.SHUFFLE_BOXES:
-                cost, X_G["pick"] = self.GetInputPort("grasp_shuffle").Eval(context)
                 print("PLAN: SHUFFLEBOX")
+                
+                cost, X_G["pick"] = self.GetInputPort("grasp_shuffle").Eval(context)
+                
                 if np.isinf(cost):
                     mode = PlannerState.PICKING_BOX
             
             else:
-                cost, X_G["pick"] = self.GetInputPort("grasp").Eval(context)
                 print("PLAN: PICKINGBOX")
+                cost, X_G["pick"] = self.GetInputPort("grasp").Eval(context)
                 if np.isinf(cost):
                     mode = PlannerState.SHUFFLE_BOXES
                 else:
@@ -371,7 +376,7 @@ class Planner(LeafSystem):
                 mode = PlannerState.SHUFFLE_BOXES"""
         
         
-
+        print("SET PLANNING")
         state.get_mutable_abstract_state(int(self._mode_index)).set_value(mode)
 
         # TODO(russt): The randomness should come in through a random input
@@ -408,13 +413,14 @@ class Planner(LeafSystem):
 
 
         X_G, times = MakeGripperFrames(X_G, t0=context.get_time())
+        print("GRIPPER PLANNING")
         print(
             f"Planned {times['postplace'] - times['initial']} second trajectory in mode {mode} at time {context.get_time()}."
         )
         state.get_mutable_abstract_state(int(self._times_index)).set_value(
             times
         )
-        
+        print("TRAJ PLANNING")
         traj_X_G = MakeGripperPoseTrajectory(X_G, times)
         traj_wsg_command = MakeGripperCommandTrajectory(times)
 
@@ -425,7 +431,7 @@ class Planner(LeafSystem):
             traj_wsg_command
         )
         print("DONE PLANNING")
-        
+
     def start_time(self, context):
         return (
             context.get_abstract_state(int(self._traj_X_G_index))

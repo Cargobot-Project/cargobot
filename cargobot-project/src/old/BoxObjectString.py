@@ -83,7 +83,7 @@ class BoxObjectString():
                     <inertial>
                       <mass>""" + str(self.mass) + """</mass>
                       <inertia>
-                          """ + self.inertia+ """ 
+                          """ + """<ixx>0.0108</ixx> <ixy>0</ixy> <ixz>0</ixz> <iyy>0.0083</iyy> <iyz>0</iyz> <izz>0.0042</izz>"""+ """ 
                       </inertia>
                     </inertial>
                     <visual name="visual">

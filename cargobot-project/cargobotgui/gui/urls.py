@@ -12,4 +12,5 @@ urlpatterns = [
     path("stopprocess/",views.stop_process,name="stop_process"),
     path("continueprocess/",views.continue_process,name="continue_process"),
     path("start_process/",views.start_process,name="start_process"),
+    path("meshcat_query/",views.meshcat_view,name="meshcat_view"),
 ]

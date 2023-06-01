@@ -35,7 +35,7 @@ directives:
 
     - add_model:
         name: iiwa
-        file: file:///usr/cargobot/cargobot-project/res/mobile_iiwa.sdf
+        file: file:///usr/cargobot/cargobot-project/res/mobile_iiwa_woc.sdf
     
 
     - add_model:

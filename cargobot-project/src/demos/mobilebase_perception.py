@@ -88,7 +88,7 @@ def run_demo(box_list):
         random_z = np.random.uniform(0, 2*np.pi)
         tf = RigidTransform(
             RotationMatrix(RollPitchYaw(0,0,random_z)),
-            [1.5/dimension*(int(box_positions[i].split(",")[0]))+0.2, 1.5/dimension*(int(box_positions[i].split(",")[1])-dimension/2), z]
+            [1/dimension*(int(box_positions[i].split(",")[0]))+0.2, 1/dimension*(int(box_positions[i].split(",")[1])-dimension/2), z]
         )
         wh.plant.SetFreeBodyPose(plant_context, wh.plant.get_body(body_index), tf)
         i += 1

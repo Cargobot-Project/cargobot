@@ -31,9 +31,13 @@ from pydrake.all import InputPortIndex
 from manip.enums import *
 
 class Planner(LeafSystem):
-    def __init__(self, plant, box_list):
+    def __init__(self, plant, box_list, truck_dimensions, truck_center):
         LeafSystem.__init__(self)
+        self.x_cnt = 0 # how many rows are there in the truck space
+        self.y_cnt = 0 # how many columns are there in the truck space
+        self.grid_position=(0,0,0)
         self.box_list = box_list
+        self.original_box_list = box_list
         self.truck_box_list = []
         self.DeclareAbstractInputPort(
             "body_poses", AbstractValue.Make([RigidTransform()])
@@ -116,7 +120,7 @@ class Planner(LeafSystem):
     def CalcShuffleColor(self, context, output):
         color_list = np.array([BoxColorEnum.RED,BoxColorEnum.BLUE,BoxColorEnum.GREEN,BoxColorEnum.MAGENTA, BoxColorEnum.YELLOW])
         choice = self.output_color
-        while choice == self.output_color or choice in self.truck_box_list or choice not in self.box_list:
+        while choice == self.output_color or choice in self.truck_box_list:
             choice = np.random.choice(color_list, replace=False, size=1)
         print(choice)
         self.color_shuffle = choice
@@ -180,8 +184,6 @@ class Planner(LeafSystem):
                     self.properties = box["labels"]
                     self.current_box = box
                     return
-    
-    
         return
         
 
@@ -223,19 +225,19 @@ class Planner(LeafSystem):
                 attempts = state.get_mutable_discrete_state(
                     int(self._attempts_index)
                 ).get_mutable_value()
-                if attempts[0] > 3:
+                if attempts[0] > 2:
                     # If I've failed 5 times in a row, then switch bins.
-                    print(
-                        "Switching to the other bin after 5 consecutive failed attempts"
-                    )
+                    print("Switching to the other bin after 5 consecutive failed attempts")
                     attempts[0] = 0
                     if mode == PlannerState.PICKING_BOX:
+                        print("Inside picking picking box")
                         state.get_mutable_abstract_state(
                             int(self._mode_index)
                         ).set_value(PlannerState.SHUFFLE_BOXES)
                         self.Plan(context, state)
                         
                     elif mode == PlannerState.SHUFFLE_BOXES:
+                        print("Inside shuffle boxes")
                         state.get_mutable_abstract_state(
                             int(self._mode_index)
                         ).set_value(PlannerState.PICKING_BOX)
@@ -298,6 +300,7 @@ class Planner(LeafSystem):
         if mode == PlannerState.PICKING_BOX and np.linalg.norm(traj_X_G.GetPose(times["preplace"]).translation()- X_G.translation()) < 0.2 and self.current_box in self.box_list:
             print("INSIDE BOX POP")
             tmp_box = self.box_list.pop(self.box_list.index(self.current_box))
+            tmp_box["grid_position"] = self.grid_position
             self.truck_box_list.append(tmp_box)
 
 
@@ -350,6 +353,7 @@ class Planner(LeafSystem):
                     mode = PlannerState.SHUFFLE_BOXES
                 else:
                     mode = PlannerState.PICKING_BOX
+            print(cost)
 
             if not np.isinf(cost):
                 break
@@ -360,29 +364,52 @@ class Planner(LeafSystem):
             elif mode == PlannerState.PICKING_BOX:
                 mode = PlannerState.SHUFFLE_BOXES"""
         
-        
+        assert not np.isinf(
+            cost
+        ), "Could not find a valid grasp in either bin after 3 attempts"
 
         state.get_mutable_abstract_state(int(self._mode_index)).set_value(mode)
 
-        # TODO(russt): The randomness should come in through a random input
-        # port.
         if mode == PlannerState.PICKING_BOX:
-            x = 0
+            # Here, we plan the dropping area of boxes according to their properties 
+            x = self.truck_center[0]-(self.truck_dimensions[0]/2)+0.05
+            y = self.truck_center[1]-(self.truck_dimensions[1]/2)+0.05
             z = 0
-            if LabelEnum.LOW_PRIORTY in self.properties:
-                x = -1.5
-            elif LabelEnum.MID_PRIORTY in self.properties:
-                x = -1
-            elif LabelEnum.HIGH_PRIORTY in self.properties:
-                x = -0.5
+            priorty = LabelEnum.LOW_PRIORTY
+            weight = LabelEnum.HEAVY
+
+            if LabelEnum.LOW_PRIORTY in self.current_box["labels"]:
+                priorty = LabelEnum.LOW_PRIORTY
+            elif LabelEnum.MID_PRIORTY in self.current_box["labels"]:
+                priorty = LabelEnum.MID_PRIORTY
+            else:
+                priorty = LabelEnum.HIGH_PRIORTY
             
-            if LabelEnum.HEAVY in self.properties:
-                z = 0.3
-            elif LabelEnum.LIGHT in self.properties:
-                z = 0.4
+            if LabelEnum.HEAVY in self.current_box["labels"]:
+                weight = LabelEnum.HEAVY
+            else:
+                weight = LabelEnum.LIGHT
+            
+            found = False
+            another_pillar = False
+            i = 0
+            j = 0
+            k = 0
+            while not found:
+                for box in self.truck_box_list:
+                    if priorty in box["labels"] and LabelLabelEnum.HEAVY in box["labels"] and (i,j,k) in box["grid_position"]:
+                        z += float(box["dimensions"][3])
+                
+                if z + float(self.current_box["dimensions"][0][3]) + 0.05 >= self.truck_dimensions[3]:
+                    z = float(self.current_box["dimensions"][0][3])/2
+                    another_pillar = True
+                else:
+                    z += float(self.current_box["dimensions"][0][3])/2
+
+
 
             # Place in truck:
-            X_G["place"] = RigidTransform(RollPitchYaw(-np.pi / 2, 0, 0), [x,0,z])
+            X_G["place"] = RigidTransform(RollPitchYaw(-np.pi / 2, 0, 0), [x,y,z])
     
         elif mode == PlannerState.SHUFFLE_BOXES:
             dimension = 6
@@ -396,7 +423,7 @@ class Planner(LeafSystem):
             X_G["place"] = tf
         
 
-
+        print("Planning")
         X_G, times = MakeGripperFrames(X_G, t0=context.get_time())
         print(
             f"Planned {times['postplace'] - times['initial']} second trajectory in mode {mode} at time {context.get_time()}."
@@ -414,6 +441,7 @@ class Planner(LeafSystem):
         state.get_mutable_abstract_state(int(self._traj_wsg_index)).set_value(
             traj_wsg_command
         )
+        return
 
     def start_time(self, context):
         return (

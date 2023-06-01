@@ -233,7 +233,8 @@ def assign_label_to_boxes(request):
                 if label.name == label_name:
                     box.label = label
     box_list = box_tuple_adaptor()
-    webbrowser.open('localhost:7000/')
+    # webbrowser.open('localhost:7000/')
+    render(request, 'gui/meshcat.html')
     simulator, meshcat, visualizer = run_demo(box_list)
     meshcat.AddButton("Stop Simulation", "Escape")
     while meshcat.GetButtonClicks("Stop Simulation") < 1:

@@ -114,8 +114,13 @@ class Planner(LeafSystem):
         self.current_box = self.box_list[0]
 
     def CalcShuffleColor(self, context, output):
-        color_list = np.array([BoxColorEnum.BLUE,BoxColorEnum.GREEN,BoxColorEnum.MAGENTA, BoxColorEnum.YELLOW])
+        color_list = np.array([box["color"] for box in self.box_list])
         choice = self.output_color
+        if color_list.size == 0:
+            print("NO OTHER BOX")
+            output.set_value(choice[0])
+            return
+
         while choice == self.output_color or choice in self.truck_box_list:
             choice = np.random.choice(color_list, replace=False, size=1)
         print(choice)
@@ -317,7 +322,7 @@ class Planner(LeafSystem):
         q = self.get_input_port(self._iiwa_position_index).Eval(context)
         #q = [0,0,0, 0.0, 0.1, 0, -1.2, 0, 1.6, 0] # TODO change according to the run
         q0 = copy(context.get_discrete_state(self._q0_index).get_value())
-        #q0[3] = q[3]  # Safer to not reset the first joint.
+        q0[3] = q[3]  # Safer to not reset the first joint.
         
         current_time = context.get_time()
         q_traj = PiecewisePolynomial.FirstOrderHold(
@@ -419,7 +424,8 @@ class Planner(LeafSystem):
         state.get_mutable_abstract_state(int(self._traj_wsg_index)).set_value(
             traj_wsg_command
         )
-
+        print("DONE PLANNING")
+        
     def start_time(self, context):
         return (
             context.get_abstract_state(int(self._traj_X_G_index))

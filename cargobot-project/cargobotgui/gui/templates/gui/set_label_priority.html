@@ -1,74 +1,73 @@
-<div>
-        <form method="post">
-            {% csrf_token %}
-            <label for="red_1">Red</label>
-            <select name="red_1" id="red_1">
-              <option value="light">Light</option>
-              <option value="heavy">Heavy</option>
-            </select>
-            <select name="red_2" id="red_2">
-              <option value="high">High</option>
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-            </select>
-          
-            <label for="green_1">Green</label>
-            <select name="green_1" id="green_1">
-              <option value="light">Light</option>
-              <option value="heavy">Heavy</option>
-            </select>
-            <select name="green_2" id="green_2">
-              <option value="high">High</option>
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-            </select>
-          
-            <label for="blue_1">Blue</label>
-            <select name="blue_1" id="blue_1">
-              <option value="light">Light</option>
-              <option value="heavy">Heavy</option>
-            </select>
-            <select name="blue_2" id="blue_2">
-              <option value="high">High</option>
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-            </select>
-          
-            <label for="cyan_1">Cyan</label>
-            <select name="cyan_1" id="cyan_1">
-              <option value="light">Light</option>
-              <option value="heavy">Heavy</option>
-            </select>
-            <select name="cyan_2" id="cyan_2">
-              <option value="high">High</option>
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-            </select>
-          
-            <label for="magenta_1">Magenta</label>
-            <select name="magenta_1" id="magenta_1">
-              <option value="light">Light</option>
-              <option value="heavy">Heavy</option>
-            </select>
-            <select name="magenta_2" id="magenta_2">
-              <option value="high">High</option>
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-            </select>
-          
-            <label for="yellow_1">Yellow</label>
-            <select name="yellow_1" id="yellow_1">
-              <option value="light">Light</option>
-              <option value="heavy">Heavy</option>
-            </select>
-            <select name="yellow_2" id="yellow_2">
-              <option value="high">High</option>
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-            </select>
-          
-            <button type="submit">Submit</button>
-          </form>
+<div style="text-align: center; margin-top: 20px;">
+  <form method="post">
+      {% csrf_token %}
+      <label for="red_1" style="display: block; margin-bottom: 5px;">Red</label>
+      <select name="red_1" id="red_1" style="padding: 5px;">
+          <option value="light">Light</option>
+          <option value="heavy">Heavy</option>
+      </select>
+      <select name="red_2" id="red_2" style="padding: 5px;">
+          <option value="high">High</option>
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+      </select>
+
+      <label for="green_1" style="display: block; margin-bottom: 5px;">Green</label>
+      <select name="green_1" id="green_1" style="padding: 5px;">
+          <option value="light">Light</option>
+          <option value="heavy">Heavy</option>
+      </select>
+      <select name="green_2" id="green_2" style="padding: 5px;">
+          <option value="high">High</option>
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+      </select>
+
+      <label for="blue_1" style="display: block; margin-bottom: 5px;">Blue</label>
+      <select name="blue_1" id="blue_1" style="padding: 5px;">
+          <option value="light">Light</option>
+          <option value="heavy">Heavy</option>
+      </select>
+      <select name="blue_2" id="blue_2" style="padding: 5px;">
+          <option value="high">High</option>
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+      </select>
+
+      <label for="cyan_1" style="display: block; margin-bottom: 5px;">Cyan</label>
+      <select name="cyan_1" id="cyan_1" style="padding: 5px;">
+          <option value="light">Light</option>
+          <option value="heavy">Heavy</option>
+      </select>
+      <select name="cyan_2" id="cyan_2" style="padding: 5px;">
+          <option value="high">High</option>
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+      </select>
+
+      <label for="magenta_1" style="display: block; margin-bottom: 5px;">Magenta</label>
+      <select name="magenta_1" id="magenta_1" style="padding: 5px;">
+          <option value="light">Light</option>
+          <option value="heavy">Heavy</option>
+      </select>
+      <select name="magenta_2" id="magenta_2" style="padding: 5px;">
+          <option value="high">High</option>
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+      </select>
+
+      <label for="yellow_1" style="display: block; margin-bottom: 5px;">Yellow</label>
+      <select name="yellow_1" id="yellow_1" style="padding: 5px;">
+          <option value="light">Light</option>
+          <option value="heavy">Heavy</option>
+      </select>
+      <select name="yellow_2" id="yellow_2" style="padding: 5px;">
+          <option value="high">High</option>
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+      </select>
+      <br>
+      <br>
+      <button type="submit" style="padding: 10px 20px; background-color: hsl(267, 39%, 49%); color: white; border: none; cursor: pointer;">Submit</button>
+  </form>
 </div>
-
-

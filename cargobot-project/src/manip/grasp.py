@@ -75,7 +75,7 @@ def GraspCandidateCost(
     p_GC = X_GW @ cloud.xyzs()
 
     # Crop to a region inside of the finger box.
-    crop_min = [-3, -3, 0.02]
+    crop_min = [0, -3, 0.02]
     crop_max = [3, 3, 0.17]
     indices = np.all(
         (
@@ -170,7 +170,7 @@ def GenerateAntipodalGraspCandidate(
     Gz = np.cross(Gx, Gy)
     R_WG = RotationMatrix(np.vstack((Gx, Gy, Gz)).T)
     #p_GS_G = [0.054 - 0.01, 0.10625, 0]
-    p_GS_G = [0.054,  0.1, 0]
+    p_GS_G = [0.054,  0.10625, 0]
 
     # Try orientations from the center out
     min_roll = -np.pi / 3.0
@@ -273,12 +273,13 @@ class GraspSelector(LeafSystem):
         bin_body = plant.GetBodyByName("table_top_link", bin_instance)
         X_B = plant.EvalBodyPoseInWorld(self.context, bin_body)
         margin = 0.001  # only because simulation is perfect!
-        a = X_B.multiply(
+        """a = X_B.multiply(
             [-0.22 + 0.025 + margin, -0.29 + 0.025 + margin, 0.015 + margin]
         )
-        b = X_B.multiply([0.22 - 0.1 - margin, 0.29 - 0.025 - margin, 2.0])
-        self._crop_lower = np.minimum(a, b)
-        self._crop_upper = np.maximum(a, b)
+        b = X_B.multiply([0.22 - 0.1 - margin, 0.29 - 0.025 - margin, 2.0])"""
+
+        self._crop_lower =  [-3, -3, 0.01]
+        self._crop_upper = [3, 3, 0.17]
         
         
         self._internal_model, self._internal_plant, self._internal_scene_graph = WarehouseSceneSystem.make_internal_model()

@@ -9,13 +9,24 @@ directives:
         X_PC:
             rotation: !Rpy { deg: [0, 90, 0 ]}
             translation: [-1.5, 0, 0.4]
+    
+    - add_model:
+        name: cargo-space-2
+        file: file:///usr/cargobot/cargobot-project/res/demo_envs/cargo-space-2.sdf
+
+    - add_weld:
+        parent: world
+        child: cargo-space-2::cargo-space
+        X_PC:
+            rotation: !Rpy { deg: [0, 90, 0 ]}
+            translation: [-2, 1.5, 0.72]
 
     - add_frame: 
         name: table_top_center
         X_PF:
             base_frame: world
             rotation: !Rpy { deg: [0, 0, 0]}
-            translation: [0, 0, -0.5]
+            translation: [0, -0.5, -0.5]
 
     - add_model:
         name: table_top
@@ -24,4 +35,3 @@ directives:
     - add_weld: 
         parent: table_top_center
         child: table_top_link
-

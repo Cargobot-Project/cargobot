@@ -43,13 +43,14 @@ class WarehouseSceneSystem:
             scene_path: str="/usr/cargobot/cargobot-project/res/box_with_cameras.dmd.yaml",
             name="warehouse_scene_system",
             add_cameras: bool=True,
-            given_boxes=[]
+            given_boxes=[],
+            given_boxes_2=[]
             ):
         self.meshcat = meshcat
         print(given_boxes)
         self.builder = DiagramBuilder()
         self.box_cnt = 5
-        self.station = self.builder.AddSystem(MakeManipulationStation( time_step=0.002, filename=scene_path, box_list=given_boxes))
+        self.station = self.builder.AddSystem(MakeManipulationStation( time_step=0.002, filename=scene_path, box_list=given_boxes+given_boxes_2))
         self.plant = self.station.GetSubsystemByName("plant")
         self.plant_context = self.plant.GetMyMutableContextFromRoot(self.station.CreateDefaultContext())
         self.scene_graph = self.station.GetSubsystemByName("scene_graph")
@@ -118,7 +119,7 @@ class WarehouseSceneSystem:
             )
         )
 
-        self.planner = self.wire_ports(given_boxes)
+        self.planner = self.wire_ports(given_boxes, given_boxes_2)
 
         self.visualizer = MeshcatVisualizer.AddToBuilder(
             self.builder, self.station.GetOutputPort("query_object"), meshcat)
@@ -160,7 +161,7 @@ class WarehouseSceneSystem:
         return pC
 
 
-    def wire_ports(self, given_boxes):
+    def wire_ports(self, given_boxes, given_boxes_2):
         # Camera bindings
         for i, camera in enumerate(self.cameras):
             self.builder.Connect(
@@ -195,7 +196,8 @@ class WarehouseSceneSystem:
         
         # Planner and Grasp Selector Bindings
         box_list = given_boxes
-        planner = self.builder.AddSystem(Planner(self.plant, box_list, self.meshcat))
+        box_list_2 = given_boxes_2
+        planner = self.builder.AddSystem(Planner(self.plant, box_list, box_list_2, self.meshcat))
 
         self.builder.Connect(
             planner.GetOutputPort("color"),

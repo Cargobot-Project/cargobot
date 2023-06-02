@@ -30,7 +30,7 @@ from pydrake.all import Simulator, RandomGenerator
 
 
 # Fix RNGs
-def run_demo(box_list):
+def run_demo(box_list, box_list_2):
     rng = np.random.default_rng(135)  # this is for python
     generator = RandomGenerator(rng.integers(0, 1000))  # this is for c++
 
@@ -48,7 +48,7 @@ def run_demo(box_list):
     # Set up the environment and cameras
     print("Setting up the environment...")
 
-    wh = WarehouseSceneSystem(model, meshcat, scene_path="/usr/cargobot/cargobot-project/res/demo_envs/mobilebase_perception_demo.dmd.yaml", given_boxes=box_list)
+    wh = WarehouseSceneSystem(model, meshcat, scene_path="/usr/cargobot/cargobot-project/res/demo_envs/mobilebase_perception_demo.dmd.yaml", given_boxes=box_list, given_boxes_2=box_list_2)
     environment_diagram, environment_context, visualizer, plan = wh.diagram, wh.context, wh.visualizer, wh.planner 
     #AddIiwaCollision(wh.plant)
     #cameras = generate_cameras(environment_diagram, environment_context, meshcat)
@@ -72,8 +72,8 @@ def run_demo(box_list):
     simulator = Simulator(environment_diagram, environment_context)
     context = simulator.get_context()
 
-    dimension = len(box_list)
-    num_of_boxes = len(box_list)
+    dimension = len(box_list) + len(box_list_2)
+    num_of_boxes = len(box_list)+ len(box_list_2)
     grid = [f"{x},0" for x in range(dimension)]
     grid = grid + [f"{x},{dimension-1}" for x in range(dimension)]
     grid = grid + [f"{dimension-1},{x+1}" for x in range(dimension-2)]
@@ -119,12 +119,12 @@ def run_demo(box_list):
 
 x = 0.1
 box_list = [{'id': 0, 'dimensions': (f'{x}', f'{x}', f'{2*x}'), 'labels': (LabelEnum.HEAVY, LabelEnum.LOW_PRIORTY), 'color': BoxColorEnum.BLUE},
-            {'id': 1, 'dimensions': (f'{x}', f'{x}', f'{2*x}'), 'labels': (LabelEnum.LIGHT, LabelEnum.LOW_PRIORTY), 'color': BoxColorEnum.GREEN},
-            {'id': 2, 'dimensions': (f'{x}', f'{x}', f'{2*x}'), 'labels': (LabelEnum.HEAVY, LabelEnum.MID_PRIORTY), 'color': BoxColorEnum.YELLOW},
+            {'id': 1, 'dimensions': (f'{x}', f'{x}', f'{2*x}'), 'labels': (LabelEnum.LIGHT, LabelEnum.LOW_PRIORTY), 'color': BoxColorEnum.GREEN}]
+box_list_2= [{'id': 2, 'dimensions': (f'{x}', f'{x}', f'{2*x}'), 'labels': (LabelEnum.HEAVY, LabelEnum.MID_PRIORTY), 'color': BoxColorEnum.YELLOW},
             {'id': 3, 'dimensions': (f'{x}', f'{x}', f'{2*x}'), 'labels': (LabelEnum.HEAVY, LabelEnum.HIGH_PRIORTY), 'color': BoxColorEnum.MAGENTA},
             ]
 #box_list = [{'id': 0, 'dimensions': (f'{x}', f'{x}', f'{2*x}'), 'labels': (LabelEnum.HEAVY, LabelEnum.LOW_PRIORTY), 'color': BoxColorEnum.BLUE}]
-simulator, meshcat, visualizer = run_demo(box_list)
+simulator, meshcat, visualizer = run_demo(box_list, box_list_2)
 meshcat.AddButton("Stop Simulation", "Escape")
 while meshcat.GetButtonClicks("Stop Simulation") < 1:
     simulator.AdvanceTo(simulator.get_context().get_time() + 2.0)

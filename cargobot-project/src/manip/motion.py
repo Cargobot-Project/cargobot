@@ -78,9 +78,7 @@ class Planner(LeafSystem):
         self._wsg_state_index = self.DeclareVectorInputPort(
             "wsg_state", 2
         ).get_index()
-        self._wsg2_state_index = self.DeclareVectorInputPort(
-            "wsg2_state", 2
-        ).get_index()
+       
 
         self._mode_index = self.DeclareAbstractState(
             AbstractValue.Make(PlannerState.WAIT_FOR_OBJECTS_TO_SETTLE)
@@ -107,7 +105,7 @@ class Planner(LeafSystem):
             self.CalcSecondMode
         )
         self.DeclareVectorOutputPort("wsg_position", 1, self.CalcWsgPosition)
-        self.DeclareVectorOutputPort("wsg2_position", 1, self.CalcWsg2Position)
+       
         # For GoHome mode.
         num_positions = 10
         self._iiwa_position_index = self.DeclareVectorInputPort(
@@ -601,30 +599,6 @@ class Planner(LeafSystem):
         output.SetFromVector([opened])
 
 
-    def CalcWsg2Position(self, context, output):
-        mode = context.get_abstract_state(int(self._mode_index)).get_value()
-        opened = np.array([0.107])
-        closed = np.array([0.0])
-
-        if mode == PlannerState.GO_HOME:
-            # Command the open position
-            output.SetFromVector([opened])
-            return
-
-        traj_wsg = context.get_abstract_state(
-            int(self._traj_wsg_index)
-        ).get_value()
-        if traj_wsg.get_number_of_segments() > 0 and traj_wsg.is_time_in_range(
-            context.get_time()
-        ):
-            # Evaluate the trajectory at the current time, and write it to the
-            # output port.
-            output.SetFromVector(traj_wsg.value(context.get_time()))
-            return
-
-        # Command the open position
-        output.SetFromVector([opened])
-
     def CalcControlMode(self, context, output):
         mode = context.get_abstract_state(int(self._mode_index)).get_value()
         
@@ -649,13 +623,6 @@ class Planner(LeafSystem):
         else:
             output.set_value(False)
 
-    def CalcDiffIK2Reset(self, context, output):
-        mode = context.get_abstract_state(int(self._mode_index)).get_value()
-        if mode == PlannerState.GO_HOME:
-            
-            output.set_value(True)
-        else:
-            output.set_value(False)
 
     def Initialize(self, context, discrete_state):
         discrete_state.set_value(
@@ -668,13 +635,6 @@ class Planner(LeafSystem):
             int(self._traj_q_index)
         ).get_value()
         output.SetFromVector(traj_q.value(context.get_time()))
-
-    def CalcIiwa2Position(self, context, output):
-        traj_q = context.get_mutable_abstract_state(
-            int(self._traj_q_index)
-        ).get_value()
-        output.SetFromVector(traj_q.value(context.get_time()))
-
 
 
 def AddMeshcatTarget(

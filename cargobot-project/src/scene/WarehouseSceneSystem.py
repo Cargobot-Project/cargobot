@@ -245,17 +245,8 @@ class WarehouseSceneSystem:
         )
         
         
-        """self.builder.Connect(
-            self.station.GetOutputPort("wsg_state_measured"),
-            planner.GetInputPort("wsg_state"),
-        )
 
-        self.builder.Connect(
-            self.station.GetOutputPort("wsg2_state_measured"),
-            planner.GetInputPort("wsg2_state"),
-        )"""
-
-        # -------- WSG SELECTOR 
+        # -------- IIWA SELECTOR 
         iiwa_selector = self.builder.AddSystem(PortSwitch(10))
         self.builder.Connect(
            self.station.GetOutputPort("iiwa_position_measured"), iiwa_selector.DeclareInputPort("iiwa1")

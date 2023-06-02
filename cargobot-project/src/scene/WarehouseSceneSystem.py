@@ -43,13 +43,13 @@ class WarehouseSceneSystem:
             scene_path: str="/usr/cargobot/cargobot-project/res/box_with_cameras.dmd.yaml",
             name="warehouse_scene_system",
             add_cameras: bool=True,
-            given_boxes=[]
+            given_boxes=[],
+            given_boxes_2=[]
             ):
         self.meshcat = meshcat
-        print(given_boxes)
+        
         self.builder = DiagramBuilder()
-        self.box_cnt = 5
-        self.station = self.builder.AddSystem(MakeManipulationStation( time_step=0.002, filename=scene_path, box_list=given_boxes))
+        self.station = self.builder.AddSystem(MakeManipulationStation( time_step=0.002, filename=scene_path, box_list=given_boxes+given_boxes_2))
         self.plant = self.station.GetSubsystemByName("plant")
         self.plant_context = self.plant.GetMyMutableContextFromRoot(self.station.CreateDefaultContext())
         self.scene_graph = self.station.GetSubsystemByName("scene_graph")
@@ -118,7 +118,7 @@ class WarehouseSceneSystem:
             )
         )
 
-        self.planner = self.wire_ports(given_boxes)
+        self.planner = self.wire_ports(given_boxes, given_boxes_2)
 
         self.visualizer = MeshcatVisualizer.AddToBuilder(
             self.builder, self.station.GetOutputPort("query_object"), meshcat)
@@ -160,7 +160,7 @@ class WarehouseSceneSystem:
         return pC
 
 
-    def wire_ports(self, given_boxes):
+    def wire_ports(self, given_boxes, given_boxes_2):
         # Camera bindings
         for i, camera in enumerate(self.cameras):
             self.builder.Connect(
@@ -195,7 +195,8 @@ class WarehouseSceneSystem:
         
         # Planner and Grasp Selector Bindings
         box_list = given_boxes
-        planner = self.builder.AddSystem(Planner(self.plant, box_list, self.meshcat))
+        box_list2 = given_boxes_2
+        planner = self.builder.AddSystem(Planner(self.plant, box_list, box_list2, self.meshcat))
 
         self.builder.Connect(
             planner.GetOutputPort("color"),
@@ -222,22 +223,70 @@ class WarehouseSceneSystem:
             self.station.GetOutputPort("body_poses"),
             planner.GetInputPort("body_poses")
         )
+
+        # -------- WSG SELECTOR 
+        wsg_selector = self.builder.AddSystem(PortSwitch(2))
         self.builder.Connect(
+           self.station.GetOutputPort("wsg_state_measured"), 
+           wsg_selector.DeclareInputPort("wsg1")
+        )
+
+        self.builder.Connect(
+            self.station.GetOutputPort("wsg2_state_measured"),
+            wsg_selector.DeclareInputPort("wsg2"),
+        )
+        self.builder.Connect(
+            wsg_selector.get_output_port(), planner.GetInputPort("wsg_state")
+        )
+        
+        self.builder.Connect(
+            planner.GetOutputPort("second_mode"),
+            wsg_selector.get_port_selector_input_port(),
+        )
+        
+        
+        """self.builder.Connect(
             self.station.GetOutputPort("wsg_state_measured"),
             planner.GetInputPort("wsg_state"),
         )
+
         self.builder.Connect(
-            self.station.GetOutputPort("iiwa_position_measured"),
-            planner.GetInputPort("iiwa_position"),
+            self.station.GetOutputPort("wsg2_state_measured"),
+            planner.GetInputPort("wsg2_state"),
+        )"""
+
+        # -------- WSG SELECTOR 
+        iiwa_selector = self.builder.AddSystem(PortSwitch(10))
+        self.builder.Connect(
+           self.station.GetOutputPort("iiwa_position_measured"), iiwa_selector.DeclareInputPort("iiwa1")
         )
 
+        self.builder.Connect(
+           self.station.GetOutputPort("iiwa2_position_measured"), iiwa_selector.DeclareInputPort("iiwa2")
+        )
+        self.builder.Connect(
+            iiwa_selector.get_output_port(), planner.GetInputPort("iiwa_position")
+        )
+        
+        self.builder.Connect(
+            planner.GetOutputPort("second_mode"),
+            iiwa_selector.get_port_selector_input_port(),
+        )
+
+       
         robot = self.station.GetSubsystemByName(
             "iiwa_controller"
         ).get_multibody_plant_for_control()
 
+        robot2 = self.station.GetSubsystemByName(
+            "iiwa2_controller"
+        ).get_multibody_plant_for_control()
+
         # Set up differential inverse kinematics.
         diff_ik = AddIiwaDifferentialIK(self.builder, robot)
+        diff_ik2 = AddIiwaDifferentialIK(self.builder, robot2)
         self.builder.Connect(planner.GetOutputPort("X_WG"), diff_ik.get_input_port(0))
+        self.builder.Connect(planner.GetOutputPort("X_WG"), diff_ik2.get_input_port(0))
         self.builder.Connect(
             self.station.GetOutputPort("iiwa_state_estimated"),
             diff_ik.GetInputPort("robot_state"),
@@ -246,17 +295,44 @@ class WarehouseSceneSystem:
             planner.GetOutputPort("reset_diff_ik"),
             diff_ik.GetInputPort("use_robot_state"),
         )
-
+        self.builder.Connect(
+            self.station.GetOutputPort("iiwa_state_estimated"),
+            diff_ik2.GetInputPort("robot_state"),
+        )
+        self.builder.Connect(
+            planner.GetOutputPort("reset_diff_ik"),
+            diff_ik2.GetInputPort("use_robot_state"),
+        )
+       
         self.builder.Connect(
             planner.GetOutputPort("wsg_position"),
             self.station.GetInputPort("wsg_position"),
         )
 
-        # The DiffIK and the direct position-control modes go through a PortSwitch
-        switch = self.builder.AddSystem(PortSwitch(10))
         self.builder.Connect(
-            diff_ik.get_output_port(), switch.DeclareInputPort("diff_ik")
+            planner.GetOutputPort("wsg_position"),
+            self.station.GetInputPort("wsg2_position"),
         )
+
+        diff_ik_selector = self.builder.AddSystem(PortSwitch(10))
+        self.builder.Connect(
+            diff_ik.get_output_port(), diff_ik_selector.DeclareInputPort("diff_ik")
+        )
+        self.builder.Connect(
+            diff_ik2.get_output_port(), diff_ik_selector.DeclareInputPort("diff_ik2")
+        )
+        
+        switch = self.builder.AddSystem(PortSwitch(10))
+        
+        self.builder.Connect(
+            diff_ik_selector.get_output_port(), switch.DeclareInputPort("diff_ik_selection")
+        )
+        self.builder.Connect(
+            planner.GetOutputPort("second_mode"),
+            diff_ik_selector.get_port_selector_input_port(),
+        )
+
+        # The DiffIK and the direct position-control modes go through a PortSwitch
         self.builder.Connect(
             planner.GetOutputPort("iiwa_position_command"),
             switch.DeclareInputPort("position"),
@@ -265,9 +341,13 @@ class WarehouseSceneSystem:
             switch.get_output_port(), self.station.GetInputPort("iiwa_position")
         )
         self.builder.Connect(
+            switch.get_output_port(), self.station.GetInputPort("iiwa2_position")
+        )
+        self.builder.Connect(
             planner.GetOutputPort("control_mode"),
             switch.get_port_selector_input_port(),
         )
+
         
         return planner
     
@@ -289,5 +369,6 @@ def make_internal_model():
         parser = Parser(plant)
         parser.AddModels("/usr/cargobot/cargobot-project/res/demo_envs/mobilebase_perception_demo_without_robot.dmd.yaml")
         parser.AddModels("/usr/cargobot/cargobot-project/res/demo_envs/wsg_fixed.sdf")
+        parser.AddModels("/usr/cargobot/cargobot-project/res/demo_envs/wsg_fixed2.sdf")
         plant.Finalize()
         return builder.Build(), plant, scene_graph

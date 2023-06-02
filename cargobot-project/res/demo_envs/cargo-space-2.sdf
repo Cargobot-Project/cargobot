@@ -1,0 +1,108 @@
+<?xml version="1.0"?>
+<sdf version="1.7">
+  <model name="cargo-space">
+    <!--
+    Axes:
+      +X - Pointing towards front (slope)
+      +Y - Pointing to left side
+      +Z - Up
+    Origin:
+      (0, 0, 0) at the center bottom of the bin
+    -->
+    <link name="cargo-space">
+      <inertial>
+        <mass>18.70</mass>
+        <inertia>
+          <ixx>0.79</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.53</iyy>
+          <iyz>0</iyz>
+          <izz>1.2</izz>
+        </inertia>
+      </inertial>
+      <visual name="front">
+        <pose>0.75 0 0.105 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 2 2</size>
+          </box>
+        </geometry>
+    
+      </visual>
+      <collision name="front">
+        <pose>0.75 0 0.105 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 2 2</size>
+          </box>
+        </geometry>
+      </collision>
+     
+      <visual name="back">
+        <pose>-1 0 0.105 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 2 2</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="back">
+        <pose>-1 0 0.105 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.05 2 2</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="left">
+        <pose>0 1 0.105 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>2 0.05 2</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="left">
+        <pose>0 1 0.105 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>2 0.05 2</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="right">
+        <pose>0 -1 0.105 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>2 0.05 2</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="right">
+        <pose>0 -1 0.105 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>2 0.05 2</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="bottom">
+        <pose>0.0 0.0 -0.9 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>2 2 0.010</size>
+          </box>
+        </geometry>
+      </visual>
+      <collision name="bottom">
+        <pose>0.0 0.0 -0.9 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>2 2 0.010</size>
+          </box>
+        </geometry>
+      </collision>
+    </link>
+  </model>
+</sdf>

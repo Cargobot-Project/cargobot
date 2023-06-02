@@ -1,0 +1,78 @@
+directives:  
+    - add_model: 
+        name: walls
+        file: file:///usr/cargobot/cargobot-project/res/demo_envs/walls.sdf     
+    
+    - add_weld: 
+        parent: world
+        child: walls
+
+    - add_model:
+        name: cargo-space
+        file: file:///usr/cargobot/cargobot-project/res/cargo-space.sdf
+
+    - add_weld:
+        parent: world
+        child: cargo-space::cargo-space
+        X_PC:
+            rotation: !Rpy { deg: [0, 90, 0 ]}
+            translation: [-2, 0, 0.72]
+
+    - add_model:
+        name: cargo-space-2
+        file: file:///usr/cargobot/cargobot-project/res/demo_envs/cargo-space-2.sdf
+
+    - add_weld:
+        parent: world
+        child: cargo-space-2::cargo-space
+        X_PC:
+            rotation: !Rpy { deg: [0, 90, 0 ]}
+            translation: [-2, 2, 0.72]
+
+
+    - add_frame: 
+        name: table_top_center
+        X_PF:
+            base_frame: world
+            rotation: !Rpy { deg: [0, 0, 0]}
+            translation: [0, 0, -0.025]
+
+    - add_model:
+        name: table_top
+        file: file:///usr/cargobot/cargobot-project/res/table_top.sdf
+
+    - add_weld: 
+        parent: table_top_center
+        child: table_top_link
+
+    - add_model:
+        name: iiwa
+        file: file:///usr/cargobot/cargobot-project/res/mobile_iiwa_woc.sdf
+    
+
+    - add_model:
+        name: wsg
+        file: package://drake/manipulation/models/wsg_50_description/sdf/schunk_wsg_50_with_tip.sdf
+        
+    - add_weld:
+        parent: iiwa::iiwa_link_7
+        child: wsg::body
+        X_PC:
+            rotation: !Rpy {deg: [90, 0, 90]}
+            translation: [0, 0, 0.09]
+
+    - add_model:
+        name: iiwa2
+        file: file:///usr/cargobot/cargobot-project/res/demo_envs/mobile_iiwa_woc2.sdf
+    
+
+    - add_model:
+        name: wsg2
+        file: package://drake/manipulation/models/wsg_50_description/sdf/schunk_wsg_50_with_tip.sdf
+        
+    - add_weld:
+        parent: iiwa2::iiwa_link_7
+        child: wsg2::body
+        X_PC:
+            rotation: !Rpy {deg: [90, 0, 90]}
+            translation: [0, 0, 0.09]

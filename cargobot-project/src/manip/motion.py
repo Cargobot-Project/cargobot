@@ -49,14 +49,16 @@ from pydrake.systems.framework import (
 )
 
 class Planner(LeafSystem):
-    def __init__(self, plant, box_list, meshcat):
+    def __init__(self, plant, box_list, box_list2, meshcat):
         LeafSystem.__init__(self)
         self.box_list = box_list
+        self.box_list2 = box_list2
         self.truck_box_list = []
+        self.truck2_box_list = []
         self.DeclareAbstractInputPort(
             "body_poses", AbstractValue.Make([RigidTransform()])
         )
-        self._gripper_body_index = plant.GetBodyByName("body").index()
+        self._gripper_body_index = plant.GetBodyByName("body", plant.GetModelInstanceByName("wsg")).index()
         
         
         self._x_bin_grasp_index = self.DeclareAbstractInputPort(
@@ -75,6 +77,9 @@ class Planner(LeafSystem):
         ).get_index()
         self._wsg_state_index = self.DeclareVectorInputPort(
             "wsg_state", 2
+        ).get_index()
+        self._wsg2_state_index = self.DeclareVectorInputPort(
+            "wsg2_state", 2
         ).get_index()
 
         self._mode_index = self.DeclareAbstractState(
@@ -96,13 +101,19 @@ class Planner(LeafSystem):
             lambda: AbstractValue.Make(RigidTransform()),
             self.CalcGripperPose,
         )
+        self.DeclareAbstractOutputPort(
+            "second_mode",
+            lambda: AbstractValue.Make(InputPortIndex(0)),
+            self.CalcSecondMode
+        )
         self.DeclareVectorOutputPort("wsg_position", 1, self.CalcWsgPosition)
-
+        self.DeclareVectorOutputPort("wsg2_position", 1, self.CalcWsg2Position)
         # For GoHome mode.
         num_positions = 10
         self._iiwa_position_index = self.DeclareVectorInputPort(
             "iiwa_position", num_positions
         ).get_index()
+        
         self.DeclareAbstractOutputPort(
             "control_mode",
             lambda: AbstractValue.Make(InputPortIndex(0)),
@@ -113,6 +124,8 @@ class Planner(LeafSystem):
             lambda: AbstractValue.Make(False),
             self.CalcDiffIKReset,
         )
+
+        
         self._q0_index = self.DeclareDiscreteState(num_positions)  # for q0
         self._traj_q_index = self.DeclareAbstractState(
             AbstractValue.Make(PiecewisePolynomial())
@@ -120,6 +133,7 @@ class Planner(LeafSystem):
         self.DeclareVectorOutputPort(
             "iiwa_position_command", num_positions, self.CalcIiwaPosition
         )
+        
         self.DeclareInitializationDiscreteUpdateEvent(self.Initialize)
         self.DeclarePeriodicUnrestrictedUpdateEvent(0.1, 0.0, self.Update)
         self.rng = np.random.default_rng(135)
@@ -130,7 +144,7 @@ class Planner(LeafSystem):
         self.color_shuffle = BoxColorEnum.RED # default
         self.output_color = BoxColorEnum.RED # default
         self.current_box = self.box_list[0]
-        self.second_mode = PlannerState.WAIT_FOR_OBJECTS_TO_SETTLE
+        self.second_mode = 0
         """self.max_widths = [[0]]
         self.max_depths = [[0]]
         self.max_heights = [[0]]"""
@@ -344,6 +358,8 @@ class Planner(LeafSystem):
             tmp_box = self.box_list.pop(self.box_list.index(self.current_box))
             tmp_box["pillar"] = self.current_pillar 
             self.truck_box_list.append(tmp_box)
+            self.second_mode +=1
+            self.second_mode = self.second_mode%2
 
 
 
@@ -584,16 +600,56 @@ class Planner(LeafSystem):
         # Command the open position
         output.SetFromVector([opened])
 
+
+    def CalcWsg2Position(self, context, output):
+        mode = context.get_abstract_state(int(self._mode_index)).get_value()
+        opened = np.array([0.107])
+        closed = np.array([0.0])
+
+        if mode == PlannerState.GO_HOME:
+            # Command the open position
+            output.SetFromVector([opened])
+            return
+
+        traj_wsg = context.get_abstract_state(
+            int(self._traj_wsg_index)
+        ).get_value()
+        if traj_wsg.get_number_of_segments() > 0 and traj_wsg.is_time_in_range(
+            context.get_time()
+        ):
+            # Evaluate the trajectory at the current time, and write it to the
+            # output port.
+            output.SetFromVector(traj_wsg.value(context.get_time()))
+            return
+
+        # Command the open position
+        output.SetFromVector([opened])
+
     def CalcControlMode(self, context, output):
         mode = context.get_abstract_state(int(self._mode_index)).get_value()
         
         if mode == PlannerState.GO_HOME:
-            
             output.set_value(InputPortIndex(2))  # Go Home
         else:
             output.set_value(InputPortIndex(1))  # Diff IK
 
+    def CalcSecondMode(self, context, output):
+        mode = context.get_abstract_state(int(self._mode_index)).get_value()
+        
+        if self.second_mode == 1:
+            output.set_value(InputPortIndex(2))  # second iiwa
+        else:
+            output.set_value(InputPortIndex(1))  # first iiwa
+
     def CalcDiffIKReset(self, context, output):
+        mode = context.get_abstract_state(int(self._mode_index)).get_value()
+        if mode == PlannerState.GO_HOME:
+            
+            output.set_value(True)
+        else:
+            output.set_value(False)
+
+    def CalcDiffIK2Reset(self, context, output):
         mode = context.get_abstract_state(int(self._mode_index)).get_value()
         if mode == PlannerState.GO_HOME:
             
@@ -613,79 +669,12 @@ class Planner(LeafSystem):
         ).get_value()
         output.SetFromVector(traj_q.value(context.get_time()))
 
+    def CalcIiwa2Position(self, context, output):
+        traj_q = context.get_mutable_abstract_state(
+            int(self._traj_q_index)
+        ).get_value()
+        output.SetFromVector(traj_q.value(context.get_time()))
 
-"""class PickAndPlaceTrajectory(LeafSystem):
-    def __init__(self, plant):
-        LeafSystem.__init__(self)
-        self._gripper_body_index = plant.GetBodyByName("body").index()
-        self.DeclareAbstractInputPort(
-            "body_poses", AbstractValue.Make([RigidTransform()]))
-        self.DeclareAbstractInputPort("X_WO",
-                                      AbstractValue.Make(RigidTransform()))
-
-        self.DeclareInitializationUnrestrictedUpdateEvent(self.Plan)
-        self._traj_X_G_index = self.DeclareAbstractState(
-            AbstractValue.Make(PiecewisePose()))
-        self._traj_wsg_index = self.DeclareAbstractState(
-            AbstractValue.Make(PiecewisePolynomial()))
-
-        self.DeclareAbstractOutputPort(
-            "X_WG", lambda: AbstractValue.Make(RigidTransform()),
-            self.CalcGripperPose)
-        self.DeclareVectorOutputPort("wsg_position", 1, self.CalcWsgPosition)
-
-    def Plan(self, context, state):
-        X_G = {
-            "initial":
-                self.get_input_port(0).Eval(context)
-                [int(self._gripper_body_index)]
-        }
-        X_O = {
-            #"initial": self.get_input_port(1).Eval(context), 
-            "goal": RigidTransform([0, -.6, 0]) #TODO use if else to decide which color goes to which part of the truck grid
-        }
-        X_GgraspO = RigidTransform(RollPitchYaw(np.pi / 2, np.pi / 2, 0), [0, 0.07, 0])
-        X_OGgrasp = X_GgraspO.inverse()
-        #X_G["pick"] = X_O["initial"] @ X_OGgrasp
-        X_G["pick"] = self.GetInputPort("grasp").Eval(context)
-        X_G["place"] = X_O["goal"] @ X_OGgrasp
-        X_G, times = MakeGripperFrames(X_G) 
-        print(f"Planned {times['postplace']} second trajectory.")
-
-        if False:  # Useful for debugging
-            AddMeshcatTriad(meshcat, "X_Oinitial", X_PT=X_O["initial"])
-            AddMeshcatTriad(meshcat, "X_Gprepick", X_PT=X_G["prepick"])
-            AddMeshcatTriad(meshcat, "X_Gpick", X_PT=X_G["pick"])
-            AddMeshcatTriad(meshcat, "X_Gplace", X_PT=X_G["place"])
-
-        traj_X_G = MakeGripperPoseTrajectory(X_G, times)
-        traj_wsg_command = MakeGripperCommandTrajectory(times)
-
-        state.get_mutable_abstract_state(int(
-            self._traj_X_G_index)).set_value(traj_X_G)
-        state.get_mutable_abstract_state(int(
-            self._traj_wsg_index)).set_value(traj_wsg_command)
-
-    def start_time(self, context):
-        return context.get_abstract_state(
-            int(self._traj_X_G_index)).get_value().start_time()
-
-    def end_time(self, context):
-        return context.get_abstract_state(
-            int(self._traj_X_G_index)).get_value().end_time()
-
-    def CalcGripperPose(self, context, output):
-        # Evaluate the trajectory at the current time, and write it to the
-        # output port.
-        output.set_value(context.get_abstract_state(int(
-            self._traj_X_G_index)).get_value().GetPose(context.get_time()))
-
-    def CalcWsgPosition(self, context, output):
-        # Evaluate the trajectory at the current time, and write it to the
-        # output port.
-        output.SetFromVector(
-            context.get_abstract_state(int(
-                self._traj_wsg_index)).get_value().value(context.get_time()))"""
 
 
 def AddMeshcatTarget(

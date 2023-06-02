@@ -65,7 +65,7 @@ def GraspCandidateCost(
     if wsg_body_index:
         wsg = plant.get_body(wsg_body_index)
     else:
-        wsg = plant.GetBodyByName("body")
+        wsg = plant.GetBodyByName("body", plant.GetModelInstanceByName("Schunk_Gripper"))
         wsg_body_index = wsg.index()
 
     X_G = plant.GetFreeBodyPose(plant_context, wsg)
@@ -145,7 +145,7 @@ def GenerateAntipodalGraspCandidate(
     if wsg_body_index:
         wsg = plant.get_body(wsg_body_index)
     else:
-        wsg = plant.GetBodyByName("body")
+        wsg = plant.GetBodyByName("body", plant.GetModelInstanceByName("Schunk_Gripper"))
         wsg_body_index = wsg.index()
 
     if cloud.size() < 1:

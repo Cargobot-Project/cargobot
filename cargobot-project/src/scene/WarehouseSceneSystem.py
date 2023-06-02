@@ -35,6 +35,7 @@ from demos.overwrite import *
 from scene.CameraSystem import *
 from manip.enums import *
 
+
 class WarehouseSceneSystem:
     def __init__(self,
             segmentation_model,
@@ -194,7 +195,7 @@ class WarehouseSceneSystem:
         
         # Planner and Grasp Selector Bindings
         box_list = given_boxes
-        planner = self.builder.AddSystem(Planner(self.plant, box_list=box_list))
+        planner = self.builder.AddSystem(Planner(self.plant, box_list, self.meshcat))
 
         self.builder.Connect(
             planner.GetOutputPort("color"),

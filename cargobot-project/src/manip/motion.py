@@ -30,8 +30,26 @@ from copy import copy
 from pydrake.all import InputPortIndex
 from manip.enums import *
 
+import time
+from collections import namedtuple
+from functools import partial
+
+import numpy as np
+from pydrake.common.value import AbstractValue
+from pydrake.geometry import (
+    Cylinder,
+    Rgba,
+    Sphere,
+)
+from pydrake.math import RigidTransform, RollPitchYaw, RotationMatrix
+from pydrake.solvers import BoundingBoxConstraint
+from pydrake.systems.framework import (
+    EventStatus,
+    LeafSystem,
+)
+
 class Planner(LeafSystem):
-    def __init__(self, plant, box_list):
+    def __init__(self, plant, box_list, meshcat):
         LeafSystem.__init__(self)
         self.box_list = box_list
         self.truck_box_list = []
@@ -113,7 +131,22 @@ class Planner(LeafSystem):
         self.output_color = BoxColorEnum.RED # default
         self.current_box = self.box_list[0]
         self.second_mode = PlannerState.WAIT_FOR_OBJECTS_TO_SETTLE
+        """self.max_widths = [[0]]
+        self.max_depths = [[0]]
+        self.max_heights = [[0]]"""
+        self.max_dims = []
+        self.current_pillar = [0,0]
+        self.start_point = [-2.5,-0.75,0]
+        self.limits = [0, 1.5, 0.7]
+        self.plant = plant
+        self.meshcat = meshcat
+        #self.ghost = self.plant.GetBodyByName("ghost")
+        
 
+
+    def set_start_point(start_point):
+        self.start_point = start_point
+    
     def CalcShuffleColor(self, context, output):
         color_list = np.array([box["color"] for box in self.box_list])
         choice = self.output_color
@@ -309,6 +342,7 @@ class Planner(LeafSystem):
         if mode == PlannerState.PICKING_BOX and np.linalg.norm(traj_X_G.GetPose(times["preplace"]).translation()- X_G.translation()) < 0.2 and self.current_box in self.box_list:
             print("INSIDE BOX POP")
             tmp_box = self.box_list.pop(self.box_list.index(self.current_box))
+            tmp_box["pillar"] = self.current_pillar 
             self.truck_box_list.append(tmp_box)
 
 
@@ -385,35 +419,89 @@ class Planner(LeafSystem):
         # TODO(russt): The randomness should come in through a random input
         # port.
         if mode == PlannerState.PICKING_BOX:
-            x = 0
-            z = 0
-            if LabelEnum.LOW_PRIORTY in self.properties:
-                x = -1.5
-            elif LabelEnum.MID_PRIORTY in self.properties:
-                x = -1
-            elif LabelEnum.HIGH_PRIORTY in self.properties:
-                x = -0.5
+            continue_pillar = False
+            pr = LabelEnum.MID_PRIORTY
             
-            if LabelEnum.HEAVY in self.properties:
-                z = 0.3
-            elif LabelEnum.LIGHT in self.properties:
-                z = 0.4
+            if LabelEnum.HIGH_PRIORTY in self.properties:
+                pr = LabelEnum.HIGH_PRIORTY
+            elif LabelEnum.LOW_PRIORTY:
+                pr = LabelEnum.LOW_PRIORTY
 
+            for placed_box in self.truck_box_list:
+                if pr in placed_box["labels"]:
+                    continue_pillar = True
+            
+            x = 0
+            y = 0
+            z = 0
+            if not continue_pillar:
+                current_x = self.current_pillar[0]
+                self.current_pillar = [current_x+1, 1]
+                max_dim = max( float(self.current_box["dimensions"][0]), float(self.current_box["dimensions"][1]), float(self.current_box["dimensions"][2]))
+                self.max_dims.append([max_dim])
+                
+                x = self.start_point[0]+0.03
+                
+                for i in range(current_x):
+                    x += max(self.max_dims[i])
+                    x += 0.03
+            
+                y = self.start_point[1]+ 0.03
+                z = float(self.current_box["dimensions"][2])/2+0.03
+
+            else: # we are not adding a new column (y-oriented vector)
+                total_z = 0
+              
+                for placed_box in self.truck_box_list:
+                    if placed_box["pillar"] == self.current_pillar:
+                        total_z += float(placed_box["dimensions"][2])
+                
+                x = self.start_point[0]+0.03
+                if self.current_pillar[0] >1:
+                    for i in range(1, self.current_pillar[0]):
+                        x += max(self.max_dims[i])
+                        x += 0.03
+
+                max_dim = max(float(self.current_box["dimensions"][0]),float(self.current_box["dimensions"][1]),float(self.current_box["dimensions"][2]))
+                if total_z + float(self.current_box["dimensions"][2]) + 0.02 < self.limits[2]:
+                    if max_dim > self.max_dims[self.current_pillar[0]-1][self.current_pillar[1]-1]:
+                        self.max_dims[self.current_pillar[0], self.current_pillar[1]] = max_dim
+                    z = self.start_point[2]+ total_z + float(self.current_box["dimensions"][2]) 
+
+                else:
+                    self.current_pillar = [self.current_pillar[0], self.current_pillar[1]+1]
+                    self.max_dims[self.current_pillar[0]-1].append(max_dim)
+                    z = self.start_point[2] + float(self.current_box["dimensions"][2])/2 + 0.02
+                    
+                y += self.start_point[1]+0.03
+                if self.current_pillar[1] > 1:
+                    for i in range(1, self.current_pillar[1]):
+                            y += self.max_dims[self.current_pillar[0]-1][i]
+                            y += 0.03
+
+            print("XYZ: ", x, y, z)
+            print("Pillar: ", self.current_pillar)
+            print("Max Dims: ", self.max_dims)
             # Place in truck:
-            X_G["place"] = RigidTransform(RollPitchYaw(-np.pi / 2, 0, 0), [x,0,z])
+            X_G["place"] = RigidTransform(RollPitchYaw(-np.pi / 2, 0, 0), [x,y,z])
     
         elif mode == PlannerState.SHUFFLE_BOXES:
             dimension = 6
             num_of_boxes = 5
             grid = [f"{x},{y}" for x in range(dimension) for y in range(dimension)]
             box_positions = np.random.choice(grid, replace=False, size=1)
+            z=0.1
+            random_z = np.random.uniform(0, 2*np.pi)
             tf = RigidTransform(
-                        RotationMatrix(),
-                        [0.15*(int(box_positions[0].split(",")[0])-dimension/2)+0.7, 0.15*(int(box_positions[0].split(",")[1])-dimension/2)-0.1, 0.3])
+                        RotationMatrix(RollPitchYaw(0,0,random_z)),
+                        [1.1/dimension*(int(box_positions[0].split(",")[0]))+0.6, 1.1/dimension*(int(box_positions[0].split(",")[0])-dimension/2), z])
             # Place in pickup area:
             X_G["place"] = tf
-        
 
+        
+        #TODO HEREEEE
+        #self.plant.SetDefaultFreeBodyPose( self.ghost, X_G["place"])
+        AddMeshcatTarget(self.meshcat, f"target", X_PT=X_G["place"])
 
         X_G, times = MakeGripperFrames(X_G, t0=context.get_time())
         print("GRIPPER PLANNING")
@@ -598,3 +686,19 @@ class Planner(LeafSystem):
         output.SetFromVector(
             context.get_abstract_state(int(
                 self._traj_wsg_index)).get_value().value(context.get_time()))"""
+
+
+def AddMeshcatTarget(
+    meshcat, path, length=0.2, radius=0.06, opacity=1.0, X_PT=RigidTransform()
+):
+    meshcat.SetTransform(path, X_PT)
+    # x-axis
+    X_TG = RigidTransform(
+        RotationMatrix.MakeXRotation(np.pi/2), [length / 2.0, 0, 0]
+    )
+    meshcat.SetTransform(path + "/target", X_TG)
+    meshcat.SetObject(
+        path + "/target", Cylinder(radius, length), Rgba(0, 1, 1, opacity)
+    )
+
+    

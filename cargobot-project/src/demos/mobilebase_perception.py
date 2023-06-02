@@ -93,7 +93,7 @@ def run_demo(box_list):
         print([1.1/dimension*(int(box_positions[i].split(",")[0]))+0.6, 1.1/dimension*(int(box_positions[i].split(",")[1])-dimension/2), z])
         wh.plant.SetFreeBodyPose(plant_context, wh.plant.get_body(body_index), tf)
         i += 1
-    
+        
     rgb_ims = wh.get_rgb_ims()
 
     # Make prediction from all cameras
@@ -122,7 +122,7 @@ box_list = [{'id': 0, 'dimensions': (f'{x}', f'{x}', f'{2*x}'), 'labels': (Label
             {'id': 1, 'dimensions': (f'{x}', f'{x}', f'{2*x}'), 'labels': (LabelEnum.LIGHT, LabelEnum.LOW_PRIORTY), 'color': BoxColorEnum.GREEN},
             {'id': 2, 'dimensions': (f'{x}', f'{x}', f'{2*x}'), 'labels': (LabelEnum.HEAVY, LabelEnum.MID_PRIORTY), 'color': BoxColorEnum.YELLOW},
             {'id': 3, 'dimensions': (f'{x}', f'{x}', f'{2*x}'), 'labels': (LabelEnum.HEAVY, LabelEnum.HIGH_PRIORTY), 'color': BoxColorEnum.MAGENTA},
-            {'id': 4, 'dimensions': (f'{x}', f'{x}', f'{2*x}'), 'labels': (LabelEnum.HEAVY, LabelEnum.LOW_PRIORTY), 'color': BoxColorEnum.BLUE}]
+            ]
 #box_list = [{'id': 0, 'dimensions': (f'{x}', f'{x}', f'{2*x}'), 'labels': (LabelEnum.HEAVY, LabelEnum.LOW_PRIORTY), 'color': BoxColorEnum.BLUE}]
 simulator, meshcat, visualizer = run_demo(box_list)
 meshcat.AddButton("Stop Simulation", "Escape")

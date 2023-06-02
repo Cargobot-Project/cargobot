@@ -92,7 +92,7 @@ def vis_normals(normals, meshcat):
         time.sleep(1)
     """
         
-DEFAULT_MASK_THRESHOLD = 155
+DEFAULT_MASK_THRESHOLD = 170
 
 def get_merged_masked_pcd(predictions, rgb_ims, depth_ims, project_depth_to_pC_func, X_WCs, cam_infos, color: BoxColorEnum, meshcat=None, 
                             mask_threshold=DEFAULT_MASK_THRESHOLD, score_threshold=0.6):

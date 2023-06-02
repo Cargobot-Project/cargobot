@@ -112,3 +112,31 @@ class BoxObjectString():
         
         return sdf
 
+
+    def generate_sdf_string_woc(self, name):
+      color_text = "<ambient>1 1 1 1</ambient><diffuse>1 1 1 1</diffuse><emissive>1 1 1 1</emissive>"
+      sdf = """
+              <?xml version="1.0"?>
+              <sdf version="1.7">
+                <model name=""" + '"'+  name + '"'+ """>
+                  <link name=""" + '"'+  name + '"'+ """>
+                    <inertial>
+                      <mass>""" + str(self.mass) + """</mass>
+                      <inertia>
+                          """ + """<ixx>0.0108</ixx> <ixy>0</ixy> <ixz>0</ixz> <iyy>0.0083</iyy> <iyz>0</iyz> <izz>0.0042</izz>"""+ """ 
+                      </inertia>
+                    </inertial>
+                    <visual name="visual">
+                      <pose>""" + f"{self.position[0]} {self.position[1]} {self.position[2]} " + f"{self.rotation[0]} {self.rotation[1]} {self.rotation[2]}" +"""</pose>
+                      <geometry>
+                        <box>
+                          <size>"""+ str(self.w) + """ """ + str(self.d) + """ """ + str(self.h) + """</size>
+                        </box>
+                      </geometry>
+                    </visual>
+                  </link>
+                </model>
+              </sdf>"""
+      
+      return sdf
+
